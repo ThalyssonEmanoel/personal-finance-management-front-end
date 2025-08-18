@@ -1,4 +1,3 @@
-import { createCookie } from "./actions/handleCookie.js";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { fetchApiLogin } from "./utils/fetchApiLogin.js";
@@ -19,18 +18,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!data.error && data.data && data.data.usuario) {
           const { access_token, usuario } = data.data;
-          await createCookie("access_token", access_token);
-          await createCookie("name", usuario.name);
-          await createCookie("email", usuario.email);
-          await createCookie("avatar", usuario.avatar);
-          await createCookie("isAdmin", usuario.isAdmin);
           return {
             id: usuario.id.toString(),
             name: usuario.name,
             email: usuario.email,
             avatar: usuario.avatar,
             isAdmin: usuario.isAdmin,
-            access_token,
+            access_token, 
           };
         }
         return null;
@@ -39,7 +33,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async session({ session, token }) {
-      session.user = token.user;
+      session.user = {
+        ...session.user,
+        id: token.user.id,
+        avatar: token.user.avatar,
+        isAdmin: token.user.isAdmin,
+        access_token: token.user.access_token,
+      };
       return session;
     },
     async jwt({ token, user }) {
@@ -48,6 +48,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return token;
     },
+  },
+  pages: {
+    signIn: '/introduction',
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, 
   },
   trustHost: true,
 });
