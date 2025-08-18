@@ -1,6 +1,16 @@
-export async function fetchApiLogin(url, method) {
+export async function fetchApiLogin(url, method, body = null) {
   try {
-    const options = { method, headers: {}, };
+    const options = { 
+      method, 
+      headers: {
+        'Content-Type': 'application/json',
+      }, 
+    };
+
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
     const response = await fetch(url, options);
     const data = await response.json();
 
@@ -8,6 +18,6 @@ export async function fetchApiLogin(url, method) {
     return data;
   } catch (error) {
     console.error("Erro na API:", error);
-    return { isError: true, message: error.message };
+    return { error: true, message: error.message };
   }
 }

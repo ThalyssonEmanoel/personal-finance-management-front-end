@@ -1,8 +1,8 @@
 'use client'
 import { useAuth } from "@/hooks/useAuth"
 
-export default function HomePage() {
-  const { getUserInfo, isLoading, isAuthenticated } = useAuth();
+export default function GoalsPage() {
+  const { isLoading, isAuthenticated } = useAuth();
 
   if (isLoading()) {
     return (
@@ -32,26 +32,25 @@ export default function HomePage() {
     );
   }
 
-  const user = getUserInfo();
-
   return (
     <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: 'calc(100vh - 6rem)',
-      gap: '2rem',
-      padding: '2rem'
+      padding: '2rem',
+      maxWidth: '1200px',
+      margin: '0 auto'
     }}>
+
       <div style={{
-        textAlign: 'center',
-        fontSize: '2rem',
-        fontWeight: 'bold'
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '400px',
+        border: '2px dashed #ddd',
+        borderRadius: '8px',
+        fontSize: '1.2rem',
+        color: '#666'
       }}>
         Hello World
       </div>
-      
     </div>
   );
 }
