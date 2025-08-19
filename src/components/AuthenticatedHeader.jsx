@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from "next-auth/react"
 import { useAuth } from "@/hooks/useAuth"
+import { useState } from 'react'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -12,17 +13,27 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LogOut } from "lucide-react"
+import { LogOut, User } from "lucide-react"
+import { ModalProfile } from "./ModalProfile"
 import '../styles/globals.css'
 
 const AuthenticatedHeader = () => {
     const { getUserInfo, isAuthenticated, logout } = useAuth();
     const user = getUserInfo();
     const pathname = usePathname();
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     const handleLogout = async () => {
         await logout();
         signOut({ callbackUrl: "/introduction" });
+    };
+
+    const handleOpenProfile = () => {
+        setIsProfileModalOpen(true);
+    };
+
+    const handleCloseProfile = () => {
+        setIsProfileModalOpen(false);
     };
 
     const getAvatarUrl = (avatarPath) => {
@@ -111,12 +122,9 @@ const AuthenticatedHeader = () => {
 
                         <DropdownMenuSeparator />
 
-                        <DropdownMenuItem className="cursor-pointer">
+                        <DropdownMenuItem className="cursor-pointer" onClick={handleOpenProfile}>
+                            <User className="mr-2 h-4 w-4" />
                             <span>Perfil</span>
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem className="cursor-pointer">
-                            <span>Alterar senha</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuSeparator />
@@ -131,6 +139,11 @@ const AuthenticatedHeader = () => {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
+
+            <ModalProfile 
+                isOpen={isProfileModalOpen} 
+                onClose={handleCloseProfile} 
+            />
         </nav>
     );
 };

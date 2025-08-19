@@ -25,6 +25,21 @@ export function useAuth() {
     return session?.user;
   };
 
+  const updateUserInfo = async (newUserInfo) => {
+    try {
+      await update({
+        ...session,
+        user: {
+          ...session.user,
+          ...newUserInfo,
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar informações do usuário:', error);
+      throw error;
+    }
+  };
+
   const refreshAccessToken = async () => {
     try {
       const refreshToken = getRefreshToken();
@@ -76,9 +91,12 @@ export function useAuth() {
     const makeRequest = async (authToken) => {
       const headers = {
         'Authorization': `Bearer ${authToken}`,
-        'Content-Type': 'application/json',
         ...options.headers,
       };
+
+      if (!(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+      }
 
       return fetch(url, {
         ...options,
@@ -110,6 +128,7 @@ export function useAuth() {
     isAuthenticated,
     isLoading,
     getUserInfo,
+    updateUserInfo,
     authenticatedFetch,
     refreshAccessToken,
     logout,
