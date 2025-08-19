@@ -1,6 +1,6 @@
 'use client'
 import { useSession } from "next-auth/react"
-import { refreshUserToken } from "@/utils/apiClient"
+import { refreshUserToken, logoutUser } from "@/utils/apiClient"
 
 export function useAuth() {
   const { data: session, status, update } = useSession();
@@ -25,7 +25,6 @@ export function useAuth() {
     return session?.user;
   };
 
-  // Função para renovar o token
   const refreshAccessToken = async () => {
     try {
       const refreshToken = getRefreshToken();
@@ -46,6 +45,8 @@ export function useAuth() {
         });
         
         return response.data.accessToken;
+      } else {
+        throw new Error('Erro na resposta do refresh token');
       }
     } catch (error) {
       console.error('Erro ao renovar token:', error);
@@ -53,7 +54,18 @@ export function useAuth() {
     }
   };
 
-  // Função para fazer requisições autenticadas com renovação automática de token
+  const logout = async () => {
+    try {
+      const userId = getUserInfo()?.id;
+      if (userId) {
+        await logoutUser(userId);
+        console.log('RefreshToken removido do banco de dados');
+      }
+    } catch (error) {
+      console.error('Erro ao fazer logout no backend:', error);
+    }
+  };
+
   const authenticatedFetch = async (url, options = {}) => {
     let token = getAccessToken();
     
@@ -100,5 +112,6 @@ export function useAuth() {
     getUserInfo,
     authenticatedFetch,
     refreshAccessToken,
+    logout,
   };
 }

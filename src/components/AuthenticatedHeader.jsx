@@ -16,19 +16,27 @@ import { LogOut } from "lucide-react"
 import '../styles/globals.css'
 
 const AuthenticatedHeader = () => {
-    const { getUserInfo, isAuthenticated } = useAuth();
+    const { getUserInfo, isAuthenticated, logout } = useAuth();
     const user = getUserInfo();
     const pathname = usePathname();
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await logout();
         signOut({ callbackUrl: "/introduction" });
     };
 
     const getAvatarUrl = (avatarPath) => {
         if (!avatarPath) return null;
 
+        // Se o avatarPath contém o caminho completo "src/uploads/", extrair apenas o nome do arquivo
+        if (avatarPath.includes('src/uploads/')) {
+            const fileName = avatarPath.replace('src/uploads/', '');
+            return `https://personal-finance-api.app.fslab.dev/uploads/${fileName}`;
+        }
+
+        // Caso contrário, assumir que é apenas o nome do arquivo
         const cleanPath = avatarPath.startsWith('/') ? avatarPath.slice(1) : avatarPath;
-        return `https://personal-finance-api.app.fslab.dev/${cleanPath}`;
+        return `https://personal-finance-api.app.fslab.dev/uploads/${cleanPath}`;
     };
 
     const getInitials = (name) => {
@@ -52,8 +60,6 @@ const AuthenticatedHeader = () => {
                     Financial Record
                 </Link>
             </div>
-
-            {/* Centralizado */}
             <div className="flex items-center space-x-6">
                 <Link
                     href="/home"

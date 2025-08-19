@@ -48,12 +48,37 @@ export const apiClient = {
   },
 };
 
-// Função específica para login
+
 export const loginUser = async (email, password) => {
   return apiClient.post('/login', { email, password });
 };
-
-// Função específica para refresh token 
+ 
 export const refreshUserToken = async (refreshToken) => {
   return apiClient.post('/refresh-token', { refreshToken });
+};
+
+export const logoutUser = async (id) => {
+  return apiClient.post('/logout', { id });
+};
+
+export const createUser = async (formData) => {
+  const url = `${API_BASE_URL}/users`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData, 
+    });
+    
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Erro na criação do usuário');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro na criação do usuário:', error);
+    throw error;
+  }
 };

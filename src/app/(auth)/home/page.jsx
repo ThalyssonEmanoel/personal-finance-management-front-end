@@ -51,7 +51,12 @@ export default function HomePage() {
       }}>
         Hello World
       </div>
-      
+      <div>
+        <p><strong>Name:</strong> {user?.name}</p>
+        <p><strong>Email:</strong> {user?.email}</p>
+        <p><strong>Avatar:</strong> <img src={user?.avatar} /></p>
+      </div>
+
     </div>
   );
 }

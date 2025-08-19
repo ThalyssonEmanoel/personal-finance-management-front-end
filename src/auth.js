@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { fetchApiLogin } from "./utils/fetchApiLogin.js";
+import { refreshUserToken } from "./utils/apiClient.js";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -24,7 +25,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             email: usuario.email,
             avatar: usuario.avatar,
             isAdmin: usuario.isAdmin,
-            accessToken, 
+            accessToken,
             refreshToken,
           };
         }
@@ -48,6 +49,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.user = user;
       }
+      // Verifica se o token está próximo do vencimento e tenta renovar
+      if (token.user?.accessToken && token.user?.refreshToken) {
+        const payload = JSON.parse(atob(token.user.accessToken.split('.')[1]));
+        const currentTime = Date.now() / 1000;
+        const timeUntilExpiration = payload.exp - currentTime;
+        // Se o token expira em menos de 5 minutos, tenta renovar
+        if (timeUntilExpiration < 300) {
+          const response = await refreshUserToken(token.user.refreshToken);
+          if (response.data?.accessToken) {
+            token.user.accessToken = response.data.accessToken;
+            token.user.refreshToken = response.data.refreshToken || token.user.refreshToken;
+          }
+        }
+      }
       return token;
     },
   },
@@ -56,7 +71,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, 
+    maxAge: 30 * 24 * 60 * 60,
   },
   trustHost: true,
 });
