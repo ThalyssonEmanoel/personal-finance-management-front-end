@@ -82,3 +82,10 @@ export const createUser = async (formData) => {
     throw error;
   }
 };
+
+export const changeUserPassword = async (userId, passwordData) => {
+  return apiClient.request(`/users/${userId}/change-password`, {
+    method: 'PATCH',
+    body: passwordData,
+  });
+};
