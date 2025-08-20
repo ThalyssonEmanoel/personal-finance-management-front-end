@@ -23,7 +23,7 @@ export const updateUserSchema = z.object({
       .optional()
       .or(z.literal(""))
       .or(z.null()),
-    avatar: z.string({ message: "O avatar precisa ser definido como uma string/texto." }).optional().nullable(),
+    avatar: z.any().optional().nullable(),
 });
 
 export const changePasswordSchema = z.object({

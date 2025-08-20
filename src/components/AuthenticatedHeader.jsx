@@ -43,6 +43,7 @@ const AuthenticatedHeader = () => {
 
   };
 
+  //https://pt.stackoverflow.com/questions/109415/como-pegar-nome-e-inicias-do-sobrenome-em-javascript
   const getInitials = (name) => {
     if (!name) return 'U';
     return name
