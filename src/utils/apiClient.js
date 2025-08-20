@@ -83,28 +83,6 @@ export const createUser = async (formData) => {
   }
 };
 
-export const updateUser = async (userId, formData) => {
-  const url = `${API_BASE_URL}/users/${userId}`;
-  
-  try {
-    const response = await fetch(url, {
-      method: 'PATCH',
-      body: formData, 
-    });
-    
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Erro na atualização do usuário');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Erro na atualização do usuário:', error);
-    throw error;
-  }
-};
-
 export const changeUserPassword = async (userId, passwordData) => {
   return apiClient.request(`/users/${userId}/change-password`, {
     method: 'PATCH',

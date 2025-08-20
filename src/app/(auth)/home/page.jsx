@@ -79,7 +79,6 @@ export default function HomePage() {
       <div>
         <p><strong>Name:</strong> {user?.name}</p>
         <p><strong>Email:</strong> {user?.email}</p>
-        <p><strong>Avatar:</strong> <img src={user?.avatar} alt="Avatar" /></p>
       </div>
     </div>
   );
