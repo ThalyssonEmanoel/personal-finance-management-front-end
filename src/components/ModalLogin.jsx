@@ -205,7 +205,7 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                               onClick={() => setShowPassword(!showPassword)}
                               className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
                             >
-                              {showPassword ? <EyeOff size={18} className='mt-1' /> : <Eye size={18} className='mt-1' />}
+                              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                             <FormMessage />
                           </FormItem>
@@ -225,7 +225,7 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                       <Button 
                         texto={isLoading ? "Entrando..." : "Entrar"} 
                         largura="334.4px" 
-                        altura="34px" 
+                        altura="40px" 
                         type="submit"
                         disabled={isLoading}
                       />

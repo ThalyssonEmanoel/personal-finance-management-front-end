@@ -7,18 +7,54 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from 'react';
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { forgotPasswordSchema } from "@/schemas/AuthSchemas"
+import { forgotUserPassword } from "@/utils/apiClient"
 
 export function ModalForgotPassword({ isOpen, onClose, onSendCode }) {
-  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const form = useForm({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: '',
+    },
+  });
 
   if (!isOpen) return null;
 
-  const handleSendCode = () => {
-    if (email.trim()) {
-      onSendCode(email);
+  const handleSendCode = async (data) => {
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await forgotUserPassword(data.email);
+      
+      setSuccess('Código enviado com sucesso! Verifique seu email.');
+      setTimeout(() => {
+        onSendCode(data.email);
+      }, 2000);
+
+    } catch (error) {
+      console.error('Erro ao enviar código:', error);
+      setError(error.message || 'Erro ao enviar código. Tente novamente.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -45,26 +81,50 @@ export function ModalForgotPassword({ isOpen, onClose, onSendCode }) {
                 Enviaremos um código ao seu email, por favor coloque-o abaixo
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-6">
-              <div className="grid gap-3">
-                <Label htmlFor="forgot-email">Email</Label>
-                <Input 
-                  id="forgot-email" 
-                  type="email" 
-                  placeholder="Ex.: example@gmail.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                texto="Enviar código" 
-                largura="334.4px" 
-                altura="34px"
-                onClick={handleSendCode}
-              />
-            </CardFooter>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSendCode)}>
+                <CardContent className="grid gap-6">
+                  {error && (
+                    <div className="text-red-500 text-sm text-center">
+                      {error}
+                    </div>
+                  )}
+                  {success && (
+                    <div className="text-green-500 text-sm text-center">
+                      {success}
+                    </div>
+                  )}
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="Ex.: example@gmail.com"
+                            disabled={isLoading}
+                            {...field}
+                            className={`mb-8`}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    texto={isLoading ? "Enviando..." : "Enviar código"}
+                    largura="334.4px"
+                    altura="40px"
+                    type="submit"
+                    disabled={isLoading}
+                  />
+                </CardFooter>
+              </form>
+            </Form>
           </Card>
         </div>
       </div>

@@ -52,6 +52,14 @@ export const apiClient = {
 export const loginUser = async (email, password) => {
   return apiClient.post('/login', { email, password });
 };
+
+export const forgotUserPassword = async (email) => {
+  return apiClient.post('/forgot-password', { email });
+};
+
+export const resetPassword = async (email, code, password) => {
+  return apiClient.post('/reset-password', { email, code, password });
+};
  
 export const refreshUserToken = async (refreshToken) => {
   return apiClient.post('/refresh-token', { refreshToken });

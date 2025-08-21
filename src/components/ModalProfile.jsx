@@ -342,7 +342,7 @@ export function ModalProfile({ isOpen, onClose }) {
                               onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                               className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
                             >
-                              {showCurrentPassword ? <EyeOff size={18} className='mt-1' /> : <Eye size={18} className='mt-1' />}
+                              {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                             <FormMessage />
                           </FormItem>
@@ -367,7 +367,7 @@ export function ModalProfile({ isOpen, onClose }) {
                               onClick={() => setShowNewPassword(!showNewPassword)}
                               className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
                             >
-                              {showNewPassword ? <EyeOff size={18} className='mt-1'/> : <Eye size={18} className='mt-1'/>}
+                              {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                             <FormMessage />
                           </FormItem>
@@ -382,7 +382,7 @@ export function ModalProfile({ isOpen, onClose }) {
                             <FormControl>
                               <Input
                                 type={showConfirmPassword ? "text" : "password"}
-                                className="pr-10"
+                                className="pr-10 mb-6"
                                 {...field}
                               />
                             </FormControl>
@@ -391,7 +391,7 @@ export function ModalProfile({ isOpen, onClose }) {
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                               className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
                             >
-                              {showConfirmPassword ? <EyeOff size={18} className='mt-1' /> : <Eye size={18} className='mt-1'/>}
+                              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                             <FormMessage />
                           </FormItem>
@@ -402,7 +402,7 @@ export function ModalProfile({ isOpen, onClose }) {
                       <Button 
                         texto={isLoading ? "Alterando senha..." : "Alterar senha"} 
                         largura="334.4px" 
-                        altura="34px" 
+                        altura="40px" 
                         type="submit"
                         disabled={isLoading}
                       />
