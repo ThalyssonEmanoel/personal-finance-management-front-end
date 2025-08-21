@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import '../styles/globals.css';
 
 
-const Button = ({ texto, largura, altura, onClick, dataTest = null, type = 'button', disabled = false }) => {
+const ButtonC = ({ texto, largura, altura, onClick, dataTest = null, type = 'button', disabled = false }) => {
   return (
     <button
       type={type}
@@ -23,9 +23,9 @@ const Button = ({ texto, largura, altura, onClick, dataTest = null, type = 'butt
   );
 };
 
-Button.propTypes = {
+ButtonC.propTypes = {
   texto: PropTypes.string.isRequired,
-  largura: PropTypes.string.isRequired, 
+  largura: PropTypes.string.isRequired,
   altura: PropTypes.string,
   onClick: PropTypes.func,
   dataTest: PropTypes.string,
@@ -33,4 +33,4 @@ Button.propTypes = {
   disabled: PropTypes.bool,
 };
 
-export default Button;
+export default ButtonC;

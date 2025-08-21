@@ -1,4 +1,4 @@
-import Button from './Custom-Button';
+import ButtonC from './Custom-Button';
 import {
   Card,
   CardContent,
@@ -115,7 +115,7 @@ export function ModalForgotPassword({ isOpen, onClose, onSendCode }) {
                   />
                 </CardContent>
                 <CardFooter>
-                  <Button
+                  <ButtonC
                     texto={isLoading ? "Enviando..." : "Enviar código"}
                     largura="334.4px"
                     altura="40px"

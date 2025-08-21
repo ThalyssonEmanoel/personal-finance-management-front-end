@@ -1,4 +1,4 @@
-import Button from './Custom-Button';
+import ButtonC from './Custom-Button';
 import {
   Card,
   CardContent,
@@ -164,7 +164,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
                   />
                 </CardContent>
                 <CardFooter>
-                  <Button
+                  <ButtonC
                     texto={isLoading ? "Alterando..." : "Alterar"}
                     largura="334.4px"
                     altura="40px"

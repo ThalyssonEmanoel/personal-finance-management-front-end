@@ -1,4 +1,4 @@
-import Button from './Custom-Button';
+import ButtonC from './Custom-Button';
 import {
   Card,
   CardContent,
@@ -297,7 +297,7 @@ export function ModalProfile({ isOpen, onClose }) {
                       />
                     </CardContent>
                     <CardFooter>
-                      <Button 
+                      <ButtonC 
                         texto={isLoading ? "Atualizando..." : "Atualizar perfil"} 
                         largura="334.4px" 
                         altura="34px" 
@@ -399,7 +399,7 @@ export function ModalProfile({ isOpen, onClose }) {
                       />
                     </CardContent>
                     <CardFooter>
-                      <Button 
+                      <ButtonC 
                         texto={isLoading ? "Alterando senha..." : "Alterar senha"} 
                         largura="334.4px" 
                         altura="40px" 

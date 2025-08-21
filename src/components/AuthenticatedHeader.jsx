@@ -59,39 +59,39 @@ const AuthenticatedHeader = () => {
   }
 
   return (
-    <nav className='bg-secondary border-b-2 border-solid border-b-tertiary flex justify-between items-center w-full h-24 px-6'>
+    <nav className='bg-secondary border-b-2 border-solid border-b-tertiary flex justify-between items-center w-full h-24'>
       <div className="flex items-center space-x-8">
-        <Link href="/introduction" className="no-underline text-black text-3xl font-bold">
+        <Link href="/introduction" className="no-underline text-black text-3xl  ml-20">
           Financial Record
         </Link>
       </div>
       <div className="flex items-center space-x-6">
         <Link
           href="/home"
-          className={`flex items-center space-x-2 transition-colors no-underline ${pathname === '/home' ? 'border-b-2 border-black font-bold text-black' : 'text-black hover:text-gray-600'}`}
+          className={`flex items-center space-x-2 transition-colors no-underline ${pathname === '/home' ? 'mt-1 border-b-3 border-black font-bold text-black' : 'text-black hover:text-gray-600'}`}
         >
           <span>Página inicial</span>
         </Link>
 
         <Link
           href="/accounts"
-          className={`flex items-center space-x-2 transition-colors no-underline ${pathname === '/accounts' ? 'border-b-2 border-black font-bold text-black' : 'text-black hover:text-gray-600'}`}
+          className={`flex items-center space-x-2 transition-colors no-underline ${pathname === '/accounts' ? 'mt-1 border-b-3 border-black font-bold text-black' : 'text-black hover:text-gray-600'}`}
         >
           <span>Contas</span>
         </Link>
 
         <Link
           href="/goals"
-          className={`flex items-center space-x-2 transition-colors no-underline mr-60 ${pathname === '/goals' ? 'border-b-2 border-black font-bold text-black' : 'text-black hover:text-gray-600'}`}
+          className={`flex items-center space-x-2 transition-colors no-underline mr-60 ${pathname === '/goals' ? 'mt-1 border-b-3 border-black font-bold text-black' : 'text-black hover:text-gray-600'}`}
         >
           <span>Metas</span>
         </Link>
       </div>
 
-      <div className="flex items-center">
+      <div className="flex items-center mr-20">
         <DropdownMenu>
           <DropdownMenuTrigger className="focus:outline-none">
-            <Avatar className="size-10 cursor-pointer hover:ring-2 hover:ring-gray-300 transition-all">
+            <Avatar className="size-14 cursor-pointer hover:ring-2 hover:ring-gray-300 transition-all">
               <AvatarImage
                 src={getAvatarUrl(user?.avatar)}
                 alt={user?.name || 'Avatar do usuário'}
@@ -102,7 +102,7 @@ const AuthenticatedHeader = () => {
             </Avatar>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent className="w-64" align="end">
+          <DropdownMenuContent className="w-80" align="end">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">

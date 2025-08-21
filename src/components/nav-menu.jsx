@@ -1,6 +1,6 @@
 'use client'
 import '../styles/globals.css';
-import Button from './Custom-Button';
+import ButtonC from './Custom-Button';
 
 const Header = ({ onLoginClick }) => {
   return (
@@ -11,7 +11,7 @@ const Header = ({ onLoginClick }) => {
         </a>
       </div>
       <div className='mr-20'>
-        <Button texto="Login" largura="110px" altura="34px" onClick={onLoginClick} />
+        <ButtonC texto="Login" largura="110px" altura="34px" onClick={onLoginClick} />
       </div>
     </nav>
   );

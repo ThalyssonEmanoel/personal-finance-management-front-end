@@ -48,8 +48,8 @@ export default function IntroductionPage() {
             <img
               src="/Imagem1Introdução.jpg"
               alt="Financial Record"
-              width={614}
-              height={268}
+              width={642}
+              height={313}
               className="rounded-lg shadow-lg"
             />
           </div>
@@ -85,8 +85,8 @@ export default function IntroductionPage() {
             <img
               src="/AnotandoGastos.jpg"
               alt="Como funciona"
-              width={614}
-              height={268}
+              width={642}
+              height={313}
               className="rounded-lg shadow-lg"
             />
           </div>

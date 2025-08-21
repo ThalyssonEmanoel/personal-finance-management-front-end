@@ -1,4 +1,4 @@
-import Button from './Custom-Button';
+import ButtonC from './Custom-Button';
 import {
   Card,
   CardContent,
@@ -222,7 +222,7 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <Button 
+                      <ButtonC 
                         texto={isLoading ? "Entrando..." : "Entrar"} 
                         largura="334.4px" 
                         altura="40px" 
@@ -370,7 +370,7 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                       />
                     </CardContent>
                     <CardFooter>
-                      <Button 
+                      <ButtonC 
                         texto={isLoading ? "Criando conta..." : "Criar conta"} 
                         largura="334.4px" 
                         altura="34px" 
