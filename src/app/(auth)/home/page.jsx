@@ -77,26 +77,33 @@ export default function HomePage() {
     );
   }
 
-  const InfoCard = ({ title, value, isPositive }) => {
-    const valueColor = isPositive ? 'text-[rgb(2,157,64)]' : 'text-[rgb(190,13,64)]';
+  const InfoCard = ({ title, value, isPositive, top3 }) => {
+    const valueColor = isPositive ? 'text-green-600' : 'text-red-600';
 
     return (
-      <div className="border-2 border-neutral-400 bg-[#FAF9F4] h-[160px] w-[500px] rounded-md relative shadow-sm">
-        <div className="absolute left-6 top-4 text-black text-base font-medium">{title}</div>
-        <div className={`absolute left-6 top-20 text-2xl ${valueColor}`}>{value}</div>
+      <div className="relative border-2 border-neutral-400 bg-[#FAF9F4] rounded-md shadow-sm pl-10 h-auto min-h-[10rem] flex flex-col justify-center">
+        <div className="text-lg font-semibold">{title}</div>
+        <div className={`mt-2 text-3xl font-bold ${valueColor}`}>{value}</div>
+
+        {top3 && (
+          <ul className="absolute right-6 list-decimal list-inside flex flex-col justify-center text-gray-700 pr-10 leading-relaxed">
+            {top3.map((item, idx) => (
+              <li key={idx}>{item}</li>
+            ))}
+          </ul>
+        )}
       </div>
     );
   };
 
   return (
     <>
-      <div className="mx-[72px] mt-6 flex flex-row justify-between">
-        <div className="flex flex-row gap-x-5">
-          {/* Select de Conta */}
+      <div className="px-20 mt-8 flex flex-row flex-wrap gap-8 items-start justify-between">
+        <div className="flex flex-wrap gap-6 items-end">
           <div className="flex flex-col">
             <label className="mb-2 text-base font-medium text-gray-700">Selecione a conta</label>
             <Select>
-              <SelectTrigger className="w-[230px] h-10 border-2 rounded-sm border-neutral-400">
+              <SelectTrigger className="w-56 h-10 border-2 border-neutral-400 rounded-sm">
                 <SelectValue placeholder="Todas as contas" value="All" />
               </SelectTrigger>
               <SelectContent>
@@ -112,8 +119,6 @@ export default function HomePage() {
               </SelectContent>
             </Select>
           </div>
-
-          {/* Select de Data */}
           <div className="flex flex-col">
             <Label htmlFor="date" className="mb-2 text-base font-medium text-gray-700">
               Mês das transações
@@ -123,7 +128,7 @@ export default function HomePage() {
                 <Button
                   variant="outline"
                   id="date"
-                  className="w-[230px] h-10 justify-between font-normal border-2 border-neutral-400 rounded-sm"
+                  className="w-56 h-10 border-2 border-neutral-400 rounded-sm justify-between"
                 >
                   {date ? date.toLocaleDateString() : "Selecionar data"}
                   <ChevronDownIcon />
@@ -143,20 +148,28 @@ export default function HomePage() {
             </Popover>
           </div>
         </div>
-        <div className='mt-6'>
-          <ButtonC
-            texto="Lançar transação"
-            largura="120px"
-            altura="40px"
-            type="submit"
-          />
+        <div className="mt-8">
+          <ButtonC texto="Lançar transação" largura="120px" altura="40px" type="submit" />
         </div>
       </div >
-      <div className="mt-10 mx-[72px] flex flex-row justify-between flex-wrap gap-y-6">
-        <InfoCard title="Saldo total" value="- R$ 1.000,00" isPositive={false} />
-        <InfoCard title="Receitas de julho" value="+ R$ 10.000,00" isPositive={true} />
-        <InfoCard title="Despesas de julho" value="- R$ 11.000,00" isPositive={false} />
-        <InfoCard title="Transferências internas" value="R$ 3.000,00" isPositive={true} />
+      <div className="mt-10 px-20 grid md:grid-cols-3 gap-6">
+        <InfoCard
+          title="Saldo total"
+          value="R$ 5.000,00"
+          isPositive={true}
+        />
+        <InfoCard
+          title="Receitas de julho"
+          value="R$ 2.500,00"
+          isPositive={true}
+          top3={["Salário", "Investimentos", "Apostas"]}
+        />
+        <InfoCard
+          title="Despesas de julho"
+          value="R$ 1.500,00"
+          isPositive={false}
+          top3={["Contas", "Mercado", "Lazer"]}
+        />
       </div>
     </>
   );
