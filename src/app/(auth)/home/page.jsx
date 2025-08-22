@@ -8,6 +8,7 @@ import { InfoCard, TransactionsTable, FiltersSection } from '@/components/Compon
 export default function HomePage() {
   const { getUserInfo, isLoading, isAuthenticated } = useAuth();
   const [progress, setProgress] = useState(0);
+  const [filters, setFilters] = useState({});
 
   useEffect(() => {
     if (isLoading()) {
@@ -25,6 +26,11 @@ export default function HomePage() {
       return () => clearInterval(interval);
     }
   }, [isLoading]);
+
+  const handleFiltersChange = React.useCallback((newFilters) => {
+    console.log('HomePage - Filtros recebidos:', newFilters);
+    setFilters(newFilters);
+  }, []);
 
   if (isLoading()) {
     return (
@@ -59,7 +65,7 @@ export default function HomePage() {
 
   return (
     <>
-      <FiltersSection />
+      <FiltersSection onFiltersChange={handleFiltersChange} />
       <div className="mt-6 px-20 grid md:grid-cols-3 gap-6">
         <InfoCard
           title="Saldo total"
@@ -80,7 +86,7 @@ export default function HomePage() {
         />
       </div>
       <div className="px-20 mt-10 mb-40">
-        <TransactionsTable />
+        <TransactionsTable filters={filters} />
       </div>
     </>
   );

@@ -40,73 +40,75 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import ButtonC from '@/components/Custom-Button'
+import { useTransactions } from '@/hooks/useTransactions'
 
 /**
  * @typedef {Object} Transaction
  * @property {string} id
- * @property {"receita" | "despesa"} tipo
- * @property {string} nome
- * @property {string} categoria
- * @property {string} conta
- * @property {string} data
- * @property {number} valor
+ * @property {"income" | "expense"} type
+ * @property {string} name
+ * @property {string} category
+ * @property {string} value
+ * @property {string} release_date
+ * @property {Object} account
+ * @property {Object} paymentMethod
  */
-
-const data = [
-  { id: "1", tipo: "despesa", nome: "Alface", categoria: "Mercado", conta: "Carteira", data: "23/01/2025", valor: -100 },
-  { id: "2", tipo: "despesa", nome: "Compras", categoria: "Mercado", conta: "Caixa econômica federal", data: "23/01/2025", valor: -300 },
-  { id: "3", tipo: "despesa", nome: "Shampoo", categoria: "Mercado", conta: "Nubank", data: "22/01/2025", valor: -150 },
-  { id: "4", tipo: "receita", nome: "Salário", categoria: "Salário", conta: "Caixa econômica", data: "22/01/2025", valor: 1000 },
-  { id: "5", tipo: "receita", nome: "Cosméticos", categoria: "Dinheiro", conta: "Carteira", data: "16/01/2025", valor: 3000 },
-  { id: "6", tipo: "receita", nome: "Cosméticos", categoria: "Dinheiro", conta: "Carteira", data: "15/01/2025", valor: 4000 },
-]
 
 const columns = [
   {
-    accessorKey: "tipo",
+    accessorKey: "type",
     header: () => React.createElement("div", null, "Tipo"),
     cell: ({ row }) => {
-      const tipo = row.original.tipo
+      const type = row.original.type
+      const tipoTexto = type === "income" ? "receita" : "despesa"
       return React.createElement("div", { className: "flex items-center relative -ml-4 -mt-3 -mb-3" },
         React.createElement("div", {
-          className: `w-3 h-20 rounded-l-md ${tipo === "receita" ? "bg-green-300" : "bg-red-300"}`
+          className: `w-3 h-20 rounded-l-md ${type === "income" ? "bg-green-300" : "bg-red-300"}`
         }),
-        React.createElement("span", { className: "pl-4 capitalize" }, tipo)
+        React.createElement("span", { className: "pl-4 capitalize" }, tipoTexto)
       )
     },
   },
   {
-    accessorKey: "nome",
+    accessorKey: "name",
     header: "Nome",
-    cell: ({ row }) => React.createElement("div", null, row.getValue("nome")),
+    cell: ({ row }) => React.createElement("div", null, row.getValue("name")),
   },
   {
-    accessorKey: "categoria",
+    accessorKey: "category",
     header: "Categoria",
-    cell: ({ row }) => React.createElement("div", null, row.getValue("categoria")),
+    cell: ({ row }) => React.createElement("div", null, row.getValue("category")),
   },
   {
-    accessorKey: "conta",
+    accessorKey: "account",
     header: "Conta",
-    cell: ({ row }) => React.createElement("div", null, row.getValue("conta")),
+    cell: ({ row }) => React.createElement("div", null, row.original.account?.name || "N/A"),
   },
   {
-    accessorKey: "data",
+    accessorKey: "release_date",
     header: "Data",
-    cell: ({ row }) => React.createElement("div", null, row.getValue("data")),
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("release_date"))
+      const formatted = date.toLocaleDateString("pt-BR")
+      return React.createElement("div", null, formatted)
+    },
   },
   {
-    accessorKey: "valor",
+    accessorKey: "value",
     header: "Valor(R$)",
     cell: ({ row }) => {
-      const valor = row.original.valor
+      const value = parseFloat(row.original.value)
+      const type = row.original.type
+      const isNegative = type === "expense"
+      
       const formatted = new Intl.NumberFormat("pt-BR", {
         style: "currency",
         currency: "BRL",
-      }).format(valor)
+      }).format(Math.abs(value))
+      
       return React.createElement("div", {
-        className: valor < 0 ? "text-red-600 font-bold" : "text-green-600 font-bold"
-      }, valor < 0 ? `- ${formatted.replace("-", "")}` : `+ ${formatted}`)
+        className: isNegative ? "text-red-600 font-bold" : "text-green-600 font-bold"
+      }, isNegative ? `- ${formatted}` : `+ ${formatted}`)
     },
   },
   {
@@ -133,14 +135,49 @@ const columns = [
   },
 ]
 
-const TransactionsTable = () => {
+const TransactionsTable = ({ filters = {} }) => {
   const [sorting, setSorting] = useState([])
   const [columnFilters, setColumnFilters] = useState([])
   const [columnVisibility, setColumnVisibility] = useState({})
   const [rowSelection, setRowSelection] = useState({})
+  const [searchTerm, setSearchTerm] = useState('')
+  const [typeFilter, setTypeFilter] = useState('All')
+  const lastFiltersRef = React.useRef({})
+
+  const { transactions, loading, error, pagination, refetch } = useTransactions()
+
+  // Aplicar filtros quando eles mudarem
+  React.useEffect(() => {
+    console.log('TransactionsTable - Aplicando filtros:', filters, 'typeFilter:', typeFilter)
+    const finalFilters = {
+      ...filters,
+      type: typeFilter !== 'All' ? typeFilter : undefined
+    }
+    
+    // Evita chamadas desnecessárias comparando se realmente mudou algo
+    const filtersChanged = JSON.stringify(finalFilters) !== JSON.stringify(lastFiltersRef.current)
+    if (filtersChanged) {
+      lastFiltersRef.current = finalFilters
+      refetch(finalFilters)
+    }
+  }, [filters, typeFilter])
+
+  // Filtrar transações localmente por nome (busca)
+  const filteredTransactions = React.useMemo(() => {
+    let filtered = transactions || []
+
+    // Filtro por termo de busca
+    if (searchTerm) {
+      filtered = filtered.filter(transaction =>
+        transaction.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    return filtered
+  }, [transactions, searchTerm])
 
   const table = useReactTable({
-    data,
+    data: filteredTransactions,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -158,15 +195,24 @@ const TransactionsTable = () => {
     },
   })
 
+  const handleTypeFilterChange = (value) => {
+    setTypeFilter(value)
+  }
+
+  const handleSearch = () => {
+    // A busca é aplicada automaticamente via useMemo
+    console.log('Busca aplicada:', searchTerm)
+  }
+
   return (
     <div>
       <div className="flex items-end justify-between mb-6">
         <div className="flex gap-6">
           <div>
             <label className="mb-2 text-base font-medium text-gray-700">Tipo de transação</label>
-            <Select>
+            <Select value={typeFilter} onValueChange={handleTypeFilterChange}>
               <SelectTrigger className="w-56 h-10 border-2 border-neutral-300 rounded-sm">
-                <SelectValue placeholder="Receita e despesa" value="All" />
+                <SelectValue placeholder="Receita e despesa" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -179,11 +225,11 @@ const TransactionsTable = () => {
             </Select>
           </div>
           <div className='mt-6'>
-            <ButtonC texto="Buscar" largura="120px" altura="40px" type="submit" />
+            <ButtonC texto="Buscar" largura="120px" altura="40px" type="button" onClick={handleSearch} />
           </div>
         </div>
         <div className='mt-6'>
-          <ButtonC texto="Baixar extrato" largura="120px" altura="40px" type="submit" />
+          <ButtonC texto="Baixar extrato" largura="120px" altura="40px" type="button" />
         </div>
       </div>
       
@@ -193,14 +239,22 @@ const TransactionsTable = () => {
             <div>
               <h2 className="text-xl font-semibold mb-2">Receitas e despesas recentes</h2>
               <p className="text-sm text-muted-foreground mb-6">
-                {`Você possui um total de ${data.length} registros.`}
+                {loading ? (
+                  "Carregando transações..."
+                ) : error ? (
+                  `Erro: ${error}`
+                ) : (
+                  `Você possui um total de ${pagination.total} registros.`
+                )}
               </p>
             </div>
             <div className="relative w-56">
               <Input
                 type="text"
-                placeholder="Ex.: João Silva"
+                placeholder="Ex.: Supermercado"
                 className="border-2 border-neutral-300 rounded-md w-56 h-10 pr-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
               <Search className="absolute right-3 top-5 -translate-y-1/2 text-gray-300 w-5 h-5 pointer-events-none" />
             </div>
@@ -220,7 +274,19 @@ const TransactionsTable = () => {
                 )}
               </TableHeader>
               <TableBody>
-                {table.getRowModel().rows?.length ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                      Carregando transações...
+                    </TableCell>
+                  </TableRow>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center text-red-600">
+                      Erro ao carregar transações: {error}
+                    </TableCell>
+                  </TableRow>
+                ) : table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row, index) =>
                     <TableRow
                       key={row.id}
