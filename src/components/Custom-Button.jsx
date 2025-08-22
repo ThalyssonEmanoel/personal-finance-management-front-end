@@ -12,7 +12,7 @@ const ButtonC = ({ texto, largura, altura, onClick, dataTest = null, type = 'but
       style={{ width: largura, height: altura }}
       className={`btn 
                   h-9 
-                  border-2 rounded-sm border-neutral-400
+                  border-2 rounded-sm border-neutral-300
                   text-black text-sm
                   hover:text-white hover:shadow-md hover:bg-brown
                   duration-200

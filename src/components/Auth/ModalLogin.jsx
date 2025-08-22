@@ -1,4 +1,4 @@
-import ButtonC from './Custom-Button';
+import ButtonC from '../Custom-Button';
 import {
   Card,
   CardContent,
@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { useState } from 'react';
-import { Checkbox } from "./ui/checkbox"
+import { Checkbox } from "../ui/checkbox"
 import { Eye, EyeOff } from "lucide-react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"

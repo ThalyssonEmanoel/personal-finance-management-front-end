@@ -1,9 +1,9 @@
 'use client'
 import { useState } from 'react';
 import Header from "@/components/nav-menu";
-import { ModalLogin } from "@/components/ModalLogin";
-import { ModalForgotPassword } from "@/components/ModalForgotPassword";
-import { ModalChangePassword } from "@/components/ModalChangePassword";
+import { ModalLogin } from "@/components/Auth/ModalLogin";
+import { ModalForgotPassword } from "@/components/Auth/ModalForgotPassword";
+import { ModalChangePassword } from "@/components/Auth/ModalChangePassword";
 
 export default function IntroductionPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
