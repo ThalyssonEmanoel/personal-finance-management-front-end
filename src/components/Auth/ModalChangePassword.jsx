@@ -176,44 +176,6 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
           </Card>
         </div>
       </div>
-      <div className="mt-16 px-20">
-        <h2 className="text-2xl font-semibold mb-4">Receitas e despesas recentes</h2>
-        <p className="text-sm text-gray-500 mb-4">Você possui um total de 6 registros.</p>
-
-        <div className="overflow-x-auto rounded-md border border-gray-200">
-          <table className="min-w-full divide-y divide-gray-200 bg-white">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Nome</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Categoria</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Conta</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Data</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Valor (R$)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {[
-                { tipo: 'despesa', nome: 'Alface', categoria: 'Mercado', conta: 'Carteira', data: '23/01/2025', valor: -100 },
-                { tipo: 'despesa', nome: 'Compras', categoria: 'Mercado', conta: 'Caixa econômica federal', data: '23/01/2025', valor: -300 },
-                { tipo: 'despesa', nome: 'Shampoo', categoria: 'Mercado', conta: 'Nubank', data: '22/01/2025', valor: -150 },
-                { tipo: 'receita', nome: 'Salário', categoria: 'Salário', conta: 'Caixa econômica', data: '22/01/2025', valor: 1000 },
-                { tipo: 'receita', nome: 'Cosméticos', categoria: 'Dinheiro', conta: 'Carteira', data: '16/01/2025', valor: 3000 },
-                { tipo: 'receita', nome: 'Cosméticos', categoria: 'Dinheiro', conta: 'Carteira', data: '15/01/2025', valor: 4000 },
-              ].map((item, index) => (
-                <tr key={index} className={`${item.tipo === 'receita' ? 'bg-green-50' : 'bg-red-50'}`}>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.nome}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{item.categoria}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{item.conta}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{item.data}</td>
-                  <td className={`px-6 py-4 text-sm font-semibold ${item.valor > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {item.valor > 0 ? `+ R$ ${item.valor.toLocaleString('pt-BR')}` : `- R$ ${Math.abs(item.valor).toLocaleString('pt-BR')}`}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   )
 }
