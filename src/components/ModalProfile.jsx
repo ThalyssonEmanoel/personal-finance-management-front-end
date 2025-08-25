@@ -66,7 +66,7 @@ export function ModalProfile({ isOpen, onClose }) {
     const fileName = avatarPath.replace('src/uploads/', '');
     const baseUrl = `https://personal-finance-api.app.fslab.dev/uploads/${fileName}`;
     // Adiciona timestamp para evitar cache de imagem
-    return `${baseUrl}?t=${Date.now()}`;
+    return baseUrl;
   };
 
   if (!isOpen) return null;

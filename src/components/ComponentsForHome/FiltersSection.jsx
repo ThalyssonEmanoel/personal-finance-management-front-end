@@ -18,29 +18,41 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import ButtonC from '@/components/Custom-Button'
+import RegisterTransactionModal from './registerTransactionModal'
 import { useAccounts } from '../../utils/apiClient.js'
 
-const FiltersSection = ({ onFiltersChange }) => {
+const FiltersSection = ({ onFiltersChange, onTransactionSuccess }) => {
   const [open, setOpen] = useState(false)
   const [date, setDate] = useState(undefined)
   const [selectedAccount, setSelectedAccount] = useState("All")
-  const { accounts, loading: accountsLoading, error: accountsError } = useAccounts()
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const { accounts, loading: accountsLoading, error: accountsError, refetch: refetchAccounts } = useAccounts()
 
   // Aplicar filtros automaticamente quando houver mudanças
   React.useEffect(() => {
     const filters = {
       accountId: selectedAccount !== "All" ? selectedAccount : undefined,
-      release_date: date ? date.toISOString().split('T')[0] : undefined // Formato YYYY-MM-DD
+      release_date: date ? date.toISOString().split('T')[0] : undefined 
     }
-
-    console.log('FiltersSection - Conta selecionada:', selectedAccount)
-    console.log('FiltersSection - Data selecionada:', date)
-    console.log('FiltersSection - Filtros finais:', filters)
     
     if (onFiltersChange) {
       onFiltersChange(filters)
     }
-  }, [selectedAccount, date, onFiltersChange]) // Adicionada dependência onFiltersChange
+  }, [selectedAccount, date, onFiltersChange]) 
+  const handleTransactionSuccess = () => {
+    refetchAccounts()
+    if (onFiltersChange) {
+      const filters = {
+        accountId: selectedAccount !== "All" ? selectedAccount : undefined,
+        release_date: date ? date.toISOString().split('T')[0] : undefined 
+      }
+      onFiltersChange(filters)
+    }
+    // Chamar callback da página home se disponível
+    if (onTransactionSuccess) {
+      onTransactionSuccess()
+    }
+  }
 
   return (
     <div className="px-20 mt-10 flex flex-row justify-between">
@@ -109,8 +121,20 @@ const FiltersSection = ({ onFiltersChange }) => {
         </div>
       </div>
       <div className="mt-8">
-        <ButtonC texto="Lançar transação" largura="120px" altura="40px" type="submit" />
+        <ButtonC 
+          texto="Lançar transação" 
+          largura="120px" 
+          altura="40px" 
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+        />
       </div>
+      
+      <RegisterTransactionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleTransactionSuccess}
+      />
     </div>
   )
 }

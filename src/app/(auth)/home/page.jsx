@@ -44,6 +44,11 @@ export default function HomePage() {
     setFilters(newFilters);
   }, []);
 
+  const handleTransactionSuccess = React.useCallback(() => {
+    // Recarregar dados das transações quando uma nova for criada
+    refetchTransactions(filters);
+  }, [filters, refetchTransactions]);
+
   // Atualiza os cards sempre que os filtros mudam
   useEffect(() => {
     // Só executa se há filtros válidos aplicados (não apenas undefined)
@@ -80,7 +85,10 @@ export default function HomePage() {
 
   return (
     <>
-      <FiltersSection onFiltersChange={handleFiltersChange} />
+      <FiltersSection 
+        onFiltersChange={handleFiltersChange}
+        onTransactionSuccess={handleTransactionSuccess}
+      />
       <div className="mt-6 px-20 grid md:grid-cols-3 gap-6">
         <InfoCard
           title="Saldo total"
