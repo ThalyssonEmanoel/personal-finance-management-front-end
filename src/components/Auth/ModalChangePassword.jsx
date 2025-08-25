@@ -18,7 +18,7 @@ import { Eye, EyeOff } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { resetPasswordSchema } from "@/schemas/AuthSchemas"
-import { resetPassword } from "@/utils/apiClient"
+import { resetPassword } from "@/utils/apiService"
 
 export function ModalChangePassword({ isOpen, onClose, email }) {
   const [showPassword, setShowPassword] = useState(false);

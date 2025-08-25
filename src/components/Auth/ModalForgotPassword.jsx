@@ -19,7 +19,7 @@ import { useState } from 'react';
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { forgotPasswordSchema } from "@/schemas/AuthSchemas"
-import { forgotUserPassword } from "@/utils/apiClient"
+import { forgotUserPassword } from "@/utils/apiService"
 
 export function ModalForgotPassword({ isOpen, onClose, onSendCode }) {
   const [isLoading, setIsLoading] = useState(false);

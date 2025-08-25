@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-import { loginUser, refreshUserToken } from "./utils/apiClient.js";
+import { loginUser, refreshUserToken } from "./utils/apiService.js";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [

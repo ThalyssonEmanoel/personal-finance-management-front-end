@@ -3,16 +3,12 @@ import { MoreHorizontal, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-  ColumnDef,
-  ColumnFiltersState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  SortingState,
   useReactTable,
-  VisibilityState,
 } from "@tanstack/react-table"
 import {
   DropdownMenu,
@@ -40,7 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import ButtonC from '@/components/Custom-Button'
-import { useTransactions } from '@/hooks/useTransactions'
+import { useTransactions } from '../../utils/apiClient.js'
 
 /**
  * @typedef {Object} Transaction
@@ -97,7 +93,7 @@ const columns = [
     accessorKey: "value",
     header: "Valor(R$)",
     cell: ({ row }) => {
-      const value = parseFloat(row.original.value)
+      const value = parseFloat(row.original.value_installment || row.original.value)
       const type = row.original.type
       const isNegative = type === "expense"
       
@@ -157,10 +153,11 @@ const TransactionsTable = ({ filters = {} }) => {
     // Evita chamadas desnecessárias comparando se realmente mudou algo
     const filtersChanged = JSON.stringify(finalFilters) !== JSON.stringify(lastFiltersRef.current)
     if (filtersChanged) {
+      console.log('TransactionsTable - Filtros mudaram, fazendo nova busca com:', finalFilters)
       lastFiltersRef.current = finalFilters
       refetch(finalFilters)
     }
-  }, [filters, typeFilter])
+  }, [filters, typeFilter]) // Mantido sem refetch nas dependências
 
   // Filtrar transações localmente por nome (busca)
   const filteredTransactions = React.useMemo(() => {

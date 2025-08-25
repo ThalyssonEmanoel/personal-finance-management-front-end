@@ -4,11 +4,23 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from "@/hooks/useAuth"
 import { Progress } from "@/components/ui/progress"
 import { InfoCard, TransactionsTable, FiltersSection } from '@/components/ComponentsForHome'
+import { useAccounts, useTransactions } from '@/utils/apiClient'
 
 export default function HomePage() {
-  const { getUserInfo, isLoading, isAuthenticated } = useAuth();
+  const { isLoading } = useAuth();
   const [progress, setProgress] = useState(0);
   const [filters, setFilters] = useState({});
+  const { totalBalance, accounts } = useAccounts()
+  const { totalIncome, totalExpense, topIncomes, topExpenses, refetch: refetchTransactions } = useTransactions()
+
+  // Função para obter o saldo correto baseado nos filtros
+  const getCurrentBalance = () => {
+    if (filters.accountId && filters.accountId !== "All") {
+      const selectedAccount = accounts.find(account => account.id.toString() === filters.accountId.toString())
+      return selectedAccount?.balance || 0
+    }
+    return totalBalance
+  }
 
   useEffect(() => {
     if (isLoading()) {
@@ -32,6 +44,23 @@ export default function HomePage() {
     setFilters(newFilters);
   }, []);
 
+  // Atualiza os cards sempre que os filtros mudam
+  useEffect(() => {
+    // Só executa se há filtros válidos aplicados (não apenas undefined)
+    const hasValidFilters = filters.accountId || filters.release_date
+    if (hasValidFilters) {
+      console.log('HomePage - Atualizando cards com filtros:', filters)
+      refetchTransactions(filters);
+    }
+  }, [filters]); // Removido refetchTransactions das dependências
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value || 0)
+  }
+
   if (isLoading()) {
     return (
       <div style={{
@@ -49,40 +78,26 @@ export default function HomePage() {
     );
   }
 
-  if (!isAuthenticated()) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '1.5rem'
-      }}>
-        Acesso não autorizado
-      </div>
-    );
-  }
-
   return (
     <>
       <FiltersSection onFiltersChange={handleFiltersChange} />
       <div className="mt-6 px-20 grid md:grid-cols-3 gap-6">
         <InfoCard
           title="Saldo total"
-          value="R$ 5.000,00"
-          isPositive={true}
+          value={formatCurrency(getCurrentBalance())}
+          isPositive={getCurrentBalance() >= 0}
         />
         <InfoCard
-          title="Receitas de julho"
-          value="R$ 2.500,00"
+          title="Receitas do mês"
+          value={formatCurrency(totalIncome)}
           isPositive={true}
-          top3={["Salário", "Investimentos", "Apostas"]}
+          top3={topIncomes.length > 0 ? topIncomes : ["Nenhuma receita"]}
         />
         <InfoCard
-          title="Despesas de julho"
-          value="R$ 1.500,00"
+          title="Despesas do mês"
+          value={formatCurrency(totalExpense)}
           isPositive={false}
-          top3={["Contas", "Mercado", "Lazer"]}
+          top3={topExpenses.length > 0 ? topExpenses : ["Nenhuma despesa"]}
         />
       </div>
       <div className="px-20 mt-10 mb-40">

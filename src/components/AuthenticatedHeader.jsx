@@ -39,9 +39,8 @@ const AuthenticatedHeader = () => {
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
     const fileName = avatarPath.replace('src/uploads/', '');
-    const baseUrl = `https://personal-finance-api.app.fslab.dev/uploads/${fileName}`;
-    // Adiciona timestamp para evitar cache de imagem
-    return `${baseUrl}?t=${Date.now()}`;
+    return `https://personal-finance-api.app.fslab.dev/uploads/${fileName}`;
+
   };
 
   //https://pt.stackoverflow.com/questions/109415/como-pegar-nome-e-inicias-do-sobrenome-em-javascript

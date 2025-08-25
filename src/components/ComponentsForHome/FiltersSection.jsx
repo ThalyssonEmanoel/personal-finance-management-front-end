@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import ButtonC from '@/components/Custom-Button'
-import { useAccounts } from '@/hooks/useAccounts'
+import { useAccounts } from '../../utils/apiClient.js'
 
 const FiltersSection = ({ onFiltersChange }) => {
   const [open, setOpen] = useState(false)
@@ -33,11 +33,14 @@ const FiltersSection = ({ onFiltersChange }) => {
       release_date: date ? date.toISOString().split('T')[0] : undefined // Formato YYYY-MM-DD
     }
 
-    console.log('Aplicando filtros:', filters)
+    console.log('FiltersSection - Conta selecionada:', selectedAccount)
+    console.log('FiltersSection - Data selecionada:', date)
+    console.log('FiltersSection - Filtros finais:', filters)
+    
     if (onFiltersChange) {
       onFiltersChange(filters)
     }
-  }, [selectedAccount, date]) // Removido onFiltersChange das dependências
+  }, [selectedAccount, date, onFiltersChange]) // Adicionada dependência onFiltersChange
 
   return (
     <div className="px-20 mt-10 flex flex-row justify-between">
