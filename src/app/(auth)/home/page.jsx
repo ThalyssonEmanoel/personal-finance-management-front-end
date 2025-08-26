@@ -10,10 +10,14 @@ export default function HomePage() {
   const { isLoading } = useAuth();
   const [progress, setProgress] = useState(0);
   const [filters, setFilters] = useState({});
-  const { totalBalance, accounts } = useAccounts()
+  const [forceUpdate, setForceUpdate] = useState(0);
+  const { totalBalance, accounts, refetch: refetchAccounts } = useAccounts()
   const { totalIncome, totalExpense, topIncomes, topExpenses, refetch: refetchTransactions } = useTransactions()
-
-  // Função para obter o saldo correto baseado nos filtros
+  const handleTransactionSuccess = React.useCallback(() => {
+    refetchAccounts()
+    refetchTransactions(filters)
+    setForceUpdate(prev => prev + 1)
+  }, [refetchAccounts, refetchTransactions, filters])
   const getCurrentBalance = () => {
     if (filters.accountId && filters.accountId !== "All") {
       const selectedAccount = accounts.find(account => account.id.toString() === filters.accountId.toString())
@@ -40,22 +44,20 @@ export default function HomePage() {
   }, [isLoading]);
 
   const handleFiltersChange = React.useCallback((newFilters) => {
-    console.log('HomePage - Filtros recebidos:', newFilters);
+    // console.log('HomePage - Filtros recebidos:', newFilters);
     setFilters(newFilters);
   }, []);
 
-  // Atualiza os cards sempre que os filtros mudam
   useEffect(() => {
-    // Se há filtros válidos aplicados, faz refetch com filtros
     const hasValidFilters = filters.accountId || filters.release_date
     if (hasValidFilters) {
-      console.log('HomePage - Atualizando cards com filtros:', filters)
+      // console.log('HomePage - Atualizando cards com filtros:', filters)
       refetchTransactions(filters);
     } else {
-      console.log('HomePage - Removendo filtros, atualizando cards com todos os dados')
+      // console.log('HomePage - Removendo filtros, atualizando cards com todos os dados')
       refetchTransactions({});
     }
-  }, [filters]); // Removido refetchTransactions das dependências
+  }, [filters]); 
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -83,7 +85,10 @@ export default function HomePage() {
 
   return (
     <>
-      <FiltersSection onFiltersChange={handleFiltersChange} />
+      <FiltersSection
+        onFiltersChange={handleFiltersChange}
+        onTransactionSuccess={handleTransactionSuccess}
+      />
       <div className="mt-6 px-20 grid md:grid-cols-3 gap-6">
         <InfoCard
           title="Saldo total"
@@ -104,7 +109,11 @@ export default function HomePage() {
         />
       </div>
       <div className="px-20 mt-10 mb-40">
-        <TransactionsTable filters={filters} />
+        <TransactionsTable
+          filters={filters}
+          key={forceUpdate}
+          onTransactionChange={handleTransactionSuccess} 
+        />
       </div>
     </>
   );

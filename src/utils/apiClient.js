@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
 
 /**
@@ -183,7 +183,7 @@ export function useTransactionCategories() {
   const initialLoadDone = useRef(false)
 
   // Categorias estáticas padrão
-  const defaultCategories = [
+  const defaultCategories = React.useMemo(() => [
     { value: 'Transporte', label: 'Transporte' },
     { value: 'Moradia', label: 'Moradia' },
     { value: 'Saúde', label: 'Saúde' },
@@ -192,7 +192,7 @@ export function useTransactionCategories() {
     { value: 'Vestuário', label: 'Vestuário' },
     { value: 'investimentos', label: 'Investimentos' },
     { value: 'outros', label: 'Outros' },
-  ]
+  ], [])
 
   const fetchCategories = useCallback(async () => {
     if (!isAuthenticated()) {
@@ -258,7 +258,7 @@ export function useTransactionCategories() {
     } finally {
       setLoading(false)
     }
-  }, [getUserInfo, isAuthenticated, authenticatedFetch])
+  }, [getUserInfo, isAuthenticated, authenticatedFetch, defaultCategories])
 
   // Carregar apenas uma vez quando autenticado
   useEffect(() => {
@@ -268,7 +268,57 @@ export function useTransactionCategories() {
     } else if (status !== 'authenticated') {
       setCategories(defaultCategories)
     }
-  }, [status, fetchCategories])
+  }, [status, fetchCategories, defaultCategories])
 
   return { categories, loading, error, refetch: fetchCategories }
+}
+
+/**
+ * @useDeleteTransaction Hook para deletar uma transação
+ */
+export function useDeleteTransaction() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const { getUserInfo, isAuthenticated, authenticatedFetch } = useAuth()
+
+  const deleteTransaction = useCallback(async (transactionId) => {
+    if (!isAuthenticated()) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    const userInfo = getUserInfo()
+    if (!userInfo?.id) {
+      throw new Error('ID do usuário não encontrado')
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/transactions/{id}?id=${transactionId}&userId=${userInfo.id}`,
+        { method: 'DELETE' }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Erro na resposta da API' }))
+        throw new Error(errorData.message || `Erro HTTP ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.error) {
+        throw new Error(data.message || 'Erro ao deletar transação')
+      }
+
+      return data
+    } catch (err) {
+      setError(err.message || 'Erro ao deletar transação')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [getUserInfo, isAuthenticated, authenticatedFetch])
+
+  return { deleteTransaction, loading, error }
 }
