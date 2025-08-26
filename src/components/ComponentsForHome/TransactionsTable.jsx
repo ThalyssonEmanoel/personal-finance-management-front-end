@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/select"
 import ButtonC from '@/components/Custom-Button'
 import { useTransactions } from '../../utils/apiClient.js'
+import ReportDownloadModal from './ReportDonwloadModal'
 
 /**
  * @typedef {Object} Transaction
@@ -96,12 +97,12 @@ const columns = [
       const value = parseFloat(row.original.value_installment || row.original.value)
       const type = row.original.type
       const isNegative = type === "expense"
-      
+
       const formatted = new Intl.NumberFormat("pt-BR", {
         style: "currency",
         currency: "BRL",
       }).format(Math.abs(value))
-      
+
       return React.createElement("div", {
         className: isNegative ? "text-red-600 font-bold" : "text-green-600 font-bold"
       }, isNegative ? `- ${formatted}` : `+ ${formatted}`)
@@ -138,8 +139,8 @@ const TransactionsTable = ({ filters = {} }) => {
   const [rowSelection, setRowSelection] = useState({})
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState('All')
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const lastFiltersRef = React.useRef({})
-
   const { transactions, loading, error, pagination, refetch } = useTransactions()
 
   // Aplicar filtros quando eles mudarem
@@ -149,7 +150,7 @@ const TransactionsTable = ({ filters = {} }) => {
       ...filters,
       type: typeFilter !== 'All' ? typeFilter : undefined
     }
-    
+
     // Evita chamadas desnecessárias comparando se realmente mudou algo
     const filtersChanged = JSON.stringify(finalFilters) !== JSON.stringify(lastFiltersRef.current)
     if (filtersChanged) {
@@ -157,7 +158,7 @@ const TransactionsTable = ({ filters = {} }) => {
       lastFiltersRef.current = finalFilters
       refetch(finalFilters)
     }
-  }, [filters, typeFilter]) // Mantido sem refetch nas dependências
+  }, [filters, typeFilter]) 
 
   // Filtrar transações localmente por nome (busca)
   const filteredTransactions = React.useMemo(() => {
@@ -197,7 +198,6 @@ const TransactionsTable = ({ filters = {} }) => {
   }
 
   const handleSearch = () => {
-    // A busca é aplicada automaticamente via useMemo
     console.log('Busca aplicada:', searchTerm)
   }
 
@@ -226,24 +226,15 @@ const TransactionsTable = ({ filters = {} }) => {
           </div>
         </div>
         <div className='mt-6'>
-          <ButtonC texto="Baixar extrato" largura="120px" altura="40px" type="button" />
+          <ButtonC texto="Baixar extrato" largura="120px" altura="40px" type="button" onClick={() => setIsReportModalOpen(true)} />
         </div>
       </div>
-      
       <div className="border-2 border-neutral-300 rounded-md">
         <div className="px-8 py-8">
           <div className="flex justify-between">
             <div>
               <h2 className="text-xl font-semibold mb-2">Receitas e despesas recentes</h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                {loading ? (
-                  "Carregando transações..."
-                ) : error ? (
-                  `Erro: ${error}`
-                ) : (
-                  `Você possui um total de ${pagination.total} registros.`
-                )}
-              </p>
+              <p className="text-sm text-muted-foreground mb-6"> Você possui um total de {pagination.total} registros.</p>
             </div>
             <div className="relative w-56">
               <Input
@@ -256,7 +247,6 @@ const TransactionsTable = ({ filters = {} }) => {
               <Search className="absolute right-3 top-5 -translate-y-1/2 text-gray-300 w-5 h-5 pointer-events-none" />
             </div>
           </div>
-          
           <div className="overflow-hidden rounded-md">
             <Table>
               <TableHeader>
@@ -280,7 +270,7 @@ const TransactionsTable = ({ filters = {} }) => {
                 ) : error ? (
                   <TableRow>
                     <TableCell colSpan={columns.length} className="h-24 text-center text-red-600">
-                      Erro ao carregar transações: {error}
+                       Nenhum resultado encontrado.
                     </TableCell>
                   </TableRow>
                 ) : table.getRowModel().rows?.length ? (
@@ -308,6 +298,11 @@ const TransactionsTable = ({ filters = {} }) => {
           </div>
         </div>
       </div>
+      
+      <ReportDownloadModal 
+        isOpen={isReportModalOpen} 
+        onClose={() => setIsReportModalOpen(false)} 
+      />
     </div>
   )
 }

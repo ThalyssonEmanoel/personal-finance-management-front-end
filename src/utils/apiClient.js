@@ -2,6 +2,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
 
+/**
+ * @useAccounts Hook para buscar contas do usuário
+ */
 export function useAccounts() {
   const [accounts, setAccounts] = useState([])
   const [loading, setLoading] = useState(false)
@@ -66,7 +69,7 @@ export function useAccounts() {
 }
 
 /**
- * Hook para buscar transações do usuário
+ * @useTransactions Hook para buscar transações do usuário
  */
 export function useTransactions() {
   const [transactions, setTransactions] = useState([])
@@ -91,21 +94,19 @@ export function useTransactions() {
       setError('ID do usuário não encontrado')
       return
     }
-
     setLoading(true)
     setError(null)
 
     try {
-      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() })
+      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() })//https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams ajuda a trabalhar com os parâmetros de uma URL(?)
 
       if (filters.type && filters.type !== 'All') queryParams.append('type', filters.type)
       if (filters.accountId && filters.accountId !== 'All') queryParams.append('accountId', filters.accountId)
       if (filters.release_date) queryParams.append('release_date', filters.release_date)
 
       const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParams.toString()}`
-      console.log('Fazendo requisição para:', url)
-      console.log('Filtros aplicados:', filters)
-
+      // console.log('Fazendo requisição para:', url)
+      // console.log('Filtros aplicados:', filters)
       const response = await authenticatedFetch(url, { method: 'GET' })
 
       if (!response.ok) {
@@ -125,8 +126,7 @@ export function useTransactions() {
       // Extrair totais da resposta da API
       setTotalIncome(data.data?.totalIncome || 0)
       setTotalExpense(data.data?.totalExpense || 0)
-      
-      // Calcular top 3 receitas e despesas mais recentes
+
       const incomeTransactions = transactionsData
         .filter(t => t.type === 'income')
         .sort((a, b) => new Date(b.release_date) - new Date(a.release_date))
@@ -149,11 +149,6 @@ export function useTransactions() {
       })
     } catch (err) {
       setError(err.message || 'Erro ao buscar transações')
-      setTransactions([])
-      setTotalIncome(0)
-      setTotalExpense(0)
-      setTopIncomes([])
-      setTopExpenses([])
     } finally {
       setLoading(false)
     }
@@ -189,13 +184,12 @@ export function useTransactionCategories() {
 
   // Categorias estáticas padrão
   const defaultCategories = [
-    { value: 'alimentacao', label: 'Alimentação' },
-    { value: 'transporte', label: 'Transporte' },
-    { value: 'moradia', label: 'Moradia' },
-    { value: 'saude', label: 'Saúde' },
-    { value: 'educacao', label: 'Educação' },
-    { value: 'lazer', label: 'Lazer' },
-    { value: 'vestuario', label: 'Vestuário' },
+    { value: 'Transporte', label: 'Transporte' },
+    { value: 'Moradia', label: 'Moradia' },
+    { value: 'Saúde', label: 'Saúde' },
+    { value: 'Educação', label: 'Educação' },
+    { value: 'Lazer', label: 'Lazer' },
+    { value: 'Vestuário', label: 'Vestuário' },
     { value: 'investimentos', label: 'Investimentos' },
     { value: 'outros', label: 'Outros' },
   ]

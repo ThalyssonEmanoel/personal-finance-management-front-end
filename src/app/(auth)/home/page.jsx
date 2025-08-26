@@ -12,6 +12,8 @@ export default function HomePage() {
   const [filters, setFilters] = useState({});
   const { totalBalance, accounts } = useAccounts()
   const { totalIncome, totalExpense, topIncomes, topExpenses, refetch: refetchTransactions } = useTransactions()
+
+  // Função para obter o saldo correto baseado nos filtros
   const getCurrentBalance = () => {
     if (filters.accountId && filters.accountId !== "All") {
       const selectedAccount = accounts.find(account => account.id.toString() === filters.accountId.toString())
@@ -42,18 +44,16 @@ export default function HomePage() {
     setFilters(newFilters);
   }, []);
 
-  const handleTransactionSuccess = React.useCallback(() => {
-    // Recarregar dados das transações quando uma nova for criada
-    refetchTransactions(filters);
-  }, [filters, refetchTransactions]);
-
   // Atualiza os cards sempre que os filtros mudam
   useEffect(() => {
-    // Só executa se há filtros válidos aplicados (não apenas undefined)
+    // Se há filtros válidos aplicados, faz refetch com filtros
     const hasValidFilters = filters.accountId || filters.release_date
     if (hasValidFilters) {
       console.log('HomePage - Atualizando cards com filtros:', filters)
       refetchTransactions(filters);
+    } else {
+      console.log('HomePage - Removendo filtros, atualizando cards com todos os dados')
+      refetchTransactions({});
     }
   }, [filters]); // Removido refetchTransactions das dependências
 
@@ -83,10 +83,7 @@ export default function HomePage() {
 
   return (
     <>
-      <FiltersSection 
-        onFiltersChange={handleFiltersChange}
-        onTransactionSuccess={handleTransactionSuccess}
-      />
+      <FiltersSection onFiltersChange={handleFiltersChange} />
       <div className="mt-6 px-20 grid md:grid-cols-3 gap-6">
         <InfoCard
           title="Saldo total"
@@ -94,13 +91,13 @@ export default function HomePage() {
           isPositive={getCurrentBalance() >= 0}
         />
         <InfoCard
-          title="Receitas do mês"
+          title="Receitas"
           value={formatCurrency(totalIncome)}
           isPositive={true}
           top3={topIncomes.length > 0 ? topIncomes : ["Nenhuma receita"]}
         />
         <InfoCard
-          title="Despesas do mês"
+          title="Despesas"
           value={formatCurrency(totalExpense)}
           isPositive={false}
           top3={topExpenses.length > 0 ? topExpenses : ["Nenhuma despesa"]}

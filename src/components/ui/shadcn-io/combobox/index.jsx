@@ -171,7 +171,7 @@ export const ComboboxEmpty = ({
 }) => {
   const { type } = useContext(ComboboxContext);
 
-  return (<CommandEmpty {...props}>{children ?? `No ${type} found.`}</CommandEmpty>);
+  return (<CommandEmpty {...props}>{children ?? `Nenhum resultado encontrado.`}</CommandEmpty>);
 };
 
 export const ComboboxGroup = (props) => (
