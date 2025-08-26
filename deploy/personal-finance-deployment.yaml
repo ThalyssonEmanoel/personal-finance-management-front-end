@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: personal-finance
+spec:
+  selector:
+    matchLabels:
+      app: personal-finance
+  template:
+    metadata:
+      labels:
+        app: personal-finance
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - name: personal-finance
+        image: thalyssoemanoel/personal-finance:latest
+        resources: {}
+        ports:
+        - containerPort: 8081
+        env:
+          - name: AUTH_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: personal-finance-front-secrets
+                key: AUTH_SECRET
+          - name: NEXT_PUBLIC_API_URL
+            valueFrom:
+              secretKeyRef:
+                name: personal-finance-front-secrets
+                key: NEXT_PUBLIC_API_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: personal-finance
+spec:
+  type: ClusterIP
+  selector:
+    app: personal-finance
+  ports:
+  - port: 81
+    targetPort: 8081
