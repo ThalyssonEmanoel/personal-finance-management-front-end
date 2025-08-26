@@ -20,7 +20,7 @@ RUN npx auth secret
 
 # Eu sinceramente prefiro dessa forma, mas se deer B.O eu coloco o ENTRYPOINT npm start de volta 
 # Acho melhor pq ele permite que eu passe argumentos para o npm start tipo: --port=3000
-CMD ["npm", "start", "--", "--port=8081"]
+CMD ["npm", "dev", "--", "--port=8081"]
 
 # ...existing code...
 
