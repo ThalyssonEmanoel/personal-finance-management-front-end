@@ -18,7 +18,7 @@ spec:
         image: thalyssoemanoel/personal-finance:latest
         resources: {}
         ports:
-        - containerPort: 3000
+        - containerPort: 8081
         env:
           - name: AUTH_SECRET
             valueFrom:
@@ -40,5 +40,5 @@ spec:
   selector:
     app: personal-finance
   ports:
-  - port: 30
-    targetPort: 3000
+  - port: 81
+    targetPort: 80

@@ -34,6 +34,9 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.IMAGEM_DOCKER }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            AUTH_SECRET=${{ secrets.AUTH_SECRET }}
 
   fazer-deploy:
     runs-on: ubuntu-latest
