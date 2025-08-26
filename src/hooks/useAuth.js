@@ -1,7 +1,7 @@
 'use client'
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { refreshUserToken, logoutUser } from "@/utils/apiClient"
+import { refreshUserToken, logoutUser } from "@/utils/apiService"
 
 export function useAuth() {
   const { data: session, status, update } = useSession();

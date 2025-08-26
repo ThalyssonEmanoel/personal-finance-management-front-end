@@ -1,4 +1,4 @@
-import Button from './Custom-Button';
+import ButtonC from './Custom-Button';
 import {
   Card,
   CardContent,
@@ -26,6 +26,7 @@ import { updateUserSchema, changePasswordSchema } from "@/schemas/UserSchemas"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAuth } from "@/hooks/useAuth"
+import { useSession } from "next-auth/react"
 
 export function ModalProfile({ isOpen, onClose }) {
   const [tab, setTab] = useState('profile');
@@ -37,8 +38,9 @@ export function ModalProfile({ isOpen, onClose }) {
   const [passwordError, setPasswordError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
-  
+
   const { getUserInfo, updateUserInfo, authenticatedFetch } = useAuth();
+  const { update } = useSession();
   const user = getUserInfo();
 
   const profileForm = useForm({
@@ -61,16 +63,12 @@ export function ModalProfile({ isOpen, onClose }) {
 
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
-
-    if (avatarPath.includes('src/uploads/')) {
-      const fileName = avatarPath.replace('src/uploads/', '');
-      return `https://personal-finance-api.app.fslab.dev/uploads/${fileName}`;
-    }
-
-    const cleanPath = avatarPath.startsWith('/') ? avatarPath.slice(1) : avatarPath;
-    return `https://personal-finance-api.app.fslab.dev/uploads/${cleanPath}`;
+    const fileName = avatarPath.replace('src/uploads/', '');
+    const baseUrl = `https://personal-finance-api.app.fslab.dev/uploads/${fileName}`;
+    // Adiciona timestamp para evitar cache de imagem
+    return baseUrl;
   };
-  
+
   if (!isOpen) return null;
 
   const handleProfileSubmit = async (data) => {
@@ -90,7 +88,7 @@ export function ModalProfile({ isOpen, onClose }) {
       const formData = new FormData();
       formData.append('name', data.name);
       formData.append('email', data.email);
-      
+
       if (data.avatar) {
         formData.append('avatar', data.avatar);
       }
@@ -106,22 +104,49 @@ export function ModalProfile({ isOpen, onClose }) {
       if (!response.ok) {
         throw new Error(responseData.message || 'Erro na atualização do usuário');
       }
-      
+
+      // Log para debug - verificar estrutura da resposta
+      console.log('Resposta do backend:', responseData);
+
       if (responseData && !responseData.error) {
         setProfileSuccess('Perfil atualizado com sucesso!');
-        
-        updateUserInfo({
+
+        // Atualiza as informações do usuário na sessão
+        const updatedUserInfo = {
           ...user,
           name: data.name,
           email: data.email,
-          avatar: responseData.user?.avatar || user.avatar
-        });
+        };
+
+        // Atualiza o avatar apenas se uma nova imagem foi enviada e o backend retornou um novo caminho
+        if (data.avatar && responseData.avatar) {
+          updatedUserInfo.avatar = responseData.avatar;
+        } else if (data.avatar && responseData.user?.avatar) {
+          updatedUserInfo.avatar = responseData.user.avatar;
+        } else if (data.avatar && responseData.data?.avatar) {
+          updatedUserInfo.avatar = responseData.data.avatar;
+        }
+
+        await updateUserInfo(updatedUserInfo);
+
+        // Força atualização da sessão para garantir que os dados sejam refletidos
+        await update(updatedUserInfo);
+
+        // Força a re-renderização do componente para mostrar a nova imagem
+        if (data.avatar && updatedUserInfo.avatar) {
+          // Adiciona um timestamp para forçar o reload da imagem
+          const imageElement = document.querySelector('[alt="Avatar atual"]');
+          if (imageElement) {
+            const newSrc = getAvatarUrl(updatedUserInfo.avatar) + '?t=' + Date.now();
+            imageElement.src = newSrc;
+          }
+        }
 
         if (data.avatar) {
           document.getElementById("profile-file-name").textContent = "Nenhum arquivo escolhido";
           profileForm.setValue('avatar', null);
         }
-        
+
         setTimeout(() => {
           setProfileSuccess('');
         }, 3000);
@@ -155,11 +180,11 @@ export function ModalProfile({ isOpen, onClose }) {
       if (!response.ok) {
         throw new Error(responseData.message || 'Erro ao alterar senha');
       }
-      
+
       if (responseData && !responseData.error) {
         setPasswordSuccess('Senha alterada com sucesso!');
         passwordForm.reset();
-        
+
         setTimeout(() => {
           setPasswordSuccess('');
         }, 3000);
@@ -232,9 +257,9 @@ export function ModalProfile({ isOpen, onClose }) {
                           <FormItem>
                             <FormLabel>Nome *</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="text" 
-                                placeholder="Ex.: João Silva" 
+                              <Input
+                                type="text"
+                                placeholder="Ex.: João Silva"
                                 {...field}
                               />
                             </FormControl>
@@ -249,9 +274,9 @@ export function ModalProfile({ isOpen, onClose }) {
                           <FormItem>
                             <FormLabel>Email *</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="email" 
-                                placeholder="Ex.: example@gmail.com" 
+                              <Input
+                                type="email"
+                                placeholder="Ex.: example@gmail.com"
                                 {...field}
                               />
                             </FormControl>
@@ -297,10 +322,10 @@ export function ModalProfile({ isOpen, onClose }) {
                       />
                     </CardContent>
                     <CardFooter>
-                      <Button 
-                        texto={isLoading ? "Atualizando..." : "Atualizar perfil"} 
-                        largura="334.4px" 
-                        altura="34px" 
+                      <ButtonC
+                        texto={isLoading ? "Atualizando..." : "Atualizar perfil"}
+                        largura="334.4px"
+                        altura="34px"
                         type="submit"
                         disabled={isLoading}
                       />
@@ -342,7 +367,7 @@ export function ModalProfile({ isOpen, onClose }) {
                               onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                               className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
                             >
-                              {showCurrentPassword ? <EyeOff size={18} className='mt-1' /> : <Eye size={18} className='mt-1' />}
+                              {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                             <FormMessage />
                           </FormItem>
@@ -367,7 +392,7 @@ export function ModalProfile({ isOpen, onClose }) {
                               onClick={() => setShowNewPassword(!showNewPassword)}
                               className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
                             >
-                              {showNewPassword ? <EyeOff size={18} className='mt-1'/> : <Eye size={18} className='mt-1'/>}
+                              {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                             <FormMessage />
                           </FormItem>
@@ -382,7 +407,7 @@ export function ModalProfile({ isOpen, onClose }) {
                             <FormControl>
                               <Input
                                 type={showConfirmPassword ? "text" : "password"}
-                                className="pr-10"
+                                className="pr-10 mb-6"
                                 {...field}
                               />
                             </FormControl>
@@ -391,7 +416,7 @@ export function ModalProfile({ isOpen, onClose }) {
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                               className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
                             >
-                              {showConfirmPassword ? <EyeOff size={18} className='mt-1' /> : <Eye size={18} className='mt-1'/>}
+                              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                             <FormMessage />
                           </FormItem>
@@ -399,10 +424,10 @@ export function ModalProfile({ isOpen, onClose }) {
                       />
                     </CardContent>
                     <CardFooter>
-                      <Button 
-                        texto={isLoading ? "Alterando senha..." : "Alterar senha"} 
-                        largura="334.4px" 
-                        altura="34px" 
+                      <ButtonC
+                        texto={isLoading ? "Alterando senha..." : "Alterar senha"}
+                        largura="334.4px"
+                        altura="40px"
                         type="submit"
                         disabled={isLoading}
                       />

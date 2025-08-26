@@ -1,4 +1,4 @@
-import Button from './Custom-Button';
+import ButtonC from '../Custom-Button';
 import {
   Card,
   CardContent,
@@ -21,11 +21,11 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { useState } from 'react';
-import { Checkbox } from "./ui/checkbox"
+import { Checkbox } from "../ui/checkbox"
 import { Eye, EyeOff } from "lucide-react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { createUser } from "@/utils/apiClient"
+import { createUser } from "@/utils/apiService"
 import { loginSchema } from "@/schemas/AuthSchemas"
 import { createUserSchema } from "@/schemas/UserSchemas"
 import { useForm } from "react-hook-form"
@@ -205,7 +205,7 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                               onClick={() => setShowPassword(!showPassword)}
                               className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
                             >
-                              {showPassword ? <EyeOff size={18} className='mt-1' /> : <Eye size={18} className='mt-1' />}
+                              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                             <FormMessage />
                           </FormItem>
@@ -222,10 +222,10 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <Button 
+                      <ButtonC 
                         texto={isLoading ? "Entrando..." : "Entrar"} 
                         largura="334.4px" 
-                        altura="34px" 
+                        altura="40px" 
                         type="submit"
                         disabled={isLoading}
                       />
@@ -370,7 +370,7 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                       />
                     </CardContent>
                     <CardFooter>
-                      <Button 
+                      <ButtonC 
                         texto={isLoading ? "Criando conta..." : "Criar conta"} 
                         largura="334.4px" 
                         altura="34px" 
