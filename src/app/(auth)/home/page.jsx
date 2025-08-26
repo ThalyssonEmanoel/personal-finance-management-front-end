@@ -12,8 +12,6 @@ export default function HomePage() {
   const [filters, setFilters] = useState({});
   const { totalBalance, accounts } = useAccounts()
   const { totalIncome, totalExpense, topIncomes, topExpenses, refetch: refetchTransactions } = useTransactions()
-
-  // Função para obter o saldo correto baseado nos filtros
   const getCurrentBalance = () => {
     if (filters.accountId && filters.accountId !== "All") {
       const selectedAccount = accounts.find(account => account.id.toString() === filters.accountId.toString())

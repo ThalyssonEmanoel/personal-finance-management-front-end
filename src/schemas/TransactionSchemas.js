@@ -20,6 +20,11 @@ export const createTransactionSchema = z.object({
     .optional(),
   recurring: z.boolean()
     .default(false),
+  number_installments: z.number()
+    .int("Número de parcelas deve ser um número inteiro")
+    .min(2, "Número mínimo de parcelas é 2")
+    .max(60, "Número máximo de parcelas é 60")
+    .optional(),
   accountId: z.number()
     .int("Conta deve ser um número inteiro")
     .positive("Conta é obrigatória"),

@@ -179,3 +179,102 @@ export function useTransactions() {
     refetch: fetchTransactions 
   }
 }
+
+export function useTransactionCategories() {
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const { getUserInfo, isAuthenticated, authenticatedFetch, status } = useAuth()
+  const initialLoadDone = useRef(false)
+
+  // Categorias estáticas padrão
+  const defaultCategories = [
+    { value: 'alimentacao', label: 'Alimentação' },
+    { value: 'transporte', label: 'Transporte' },
+    { value: 'moradia', label: 'Moradia' },
+    { value: 'saude', label: 'Saúde' },
+    { value: 'educacao', label: 'Educação' },
+    { value: 'lazer', label: 'Lazer' },
+    { value: 'vestuario', label: 'Vestuário' },
+    { value: 'investimentos', label: 'Investimentos' },
+    { value: 'outros', label: 'Outros' },
+  ]
+
+  const fetchCategories = useCallback(async () => {
+    if (!isAuthenticated()) {
+      setError('Usuário não autenticado')
+      setCategories(defaultCategories)
+      return
+    }
+
+    const userInfo = getUserInfo()
+    if (!userInfo?.id) {
+      setError('ID do usuário não encontrado')
+      setCategories(defaultCategories)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() })
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParams.toString()}`
+
+      const response = await authenticatedFetch(url, { method: 'GET' })
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP ${response.status}`)
+      }
+
+      const data = await response.json()
+      const transactionsData = (data.data && data.data.transactions) || []
+
+      // Extrair categorias únicas das transações existentes
+      const existingCategories = [...new Set(
+        transactionsData
+          .map(transaction => transaction.category)
+          .filter(category => category && category.trim() !== '')
+      )]
+
+      // Combinar categorias existentes com as padrão
+      const combinedCategories = new Map()
+      
+      // Adicionar categorias padrão
+      defaultCategories.forEach(cat => {
+        combinedCategories.set(cat.value, cat)
+      })
+
+      // Adicionar categorias existentes (sobrescrever se já existir)
+      existingCategories.forEach(category => {
+        const normalizedValue = category.toLowerCase().replace(/\s+/g, '_')
+        combinedCategories.set(normalizedValue, {
+          value: normalizedValue,
+          label: category
+        })
+      })
+
+      const finalCategories = Array.from(combinedCategories.values())
+        .sort((a, b) => a.label.localeCompare(b.label))
+
+      setCategories(finalCategories)
+    } catch (err) {
+      console.warn('Erro ao buscar categorias, usando categorias padrão:', err.message)
+      setCategories(defaultCategories)
+    } finally {
+      setLoading(false)
+    }
+  }, [getUserInfo, isAuthenticated, authenticatedFetch])
+
+  // Carregar apenas uma vez quando autenticado
+  useEffect(() => {
+    if (status === 'authenticated' && !initialLoadDone.current) {
+      initialLoadDone.current = true
+      fetchCategories()
+    } else if (status !== 'authenticated') {
+      setCategories(defaultCategories)
+    }
+  }, [status, fetchCategories])
+
+  return { categories, loading, error, refetch: fetchCategories }
+}

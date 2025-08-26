@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ChevronDownIcon, CalendarIcon } from "lucide-react"
+import { CalendarIcon, ChevronsUpDown } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -44,19 +44,12 @@ import {
   ComboboxItem,
   ComboboxList,
   ComboboxTrigger,
+  ComboboxCreateNew,
 } from '@/components/ui/shadcn-io/combobox'
 import { createTransactionSchema } from '@/schemas/TransactionSchemas'
-import { useAccounts } from '@/utils/apiClient'
+import { useAccounts, useTransactionCategories } from '@/utils/apiClient'
 import { useAuth } from '@/hooks/useAuth'
-
-// Categorias mais comuns
-const categories = [
-  { value: 'alimentacao', label: 'Alimentação' },
-  { value: 'transporte', label: 'Transporte' },
-  { value: 'moradia', label: 'Moradia' },
-  { value: 'saude', label: 'Saúde' },
-  { value: 'educacao', label: 'Educação' },
-]
+import ButtonC from '../Custom-Button'
 
 const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false)
@@ -65,8 +58,11 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
   const [dateOpen, setDateOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] = useState(null)
   const [paymentMethods, setPaymentMethods] = useState([])
+  const [localCategories, setLocalCategories] = useState([])
+  const [isInstallment, setIsInstallment] = useState(false)
 
   const { accounts, loading: accountsLoading } = useAccounts()
+  const { categories, loading: categoriesLoading, refetch: refetchCategories } = useTransactionCategories()
   const { getUserInfo, authenticatedFetch } = useAuth()
 
   const form = useForm({
@@ -79,25 +75,49 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
       release_date: '',
       description: '',
       recurring: false,
+      number_installments: undefined,
       accountId: undefined,
       paymentMethodId: undefined,
     },
   })
 
   const watchedAccountId = form.watch('accountId')
+  const watchedNumberInstallments = form.watch('number_installments')
 
-  // Atualizar formas de pagamento quando a conta for selecionada
+  useEffect(() => {
+    setLocalCategories(categories)
+  }, [categories])
+
   useEffect(() => {
     if (watchedAccountId && accounts.length > 0) {
       const account = accounts.find(acc => acc.id === parseInt(watchedAccountId))
       if (account && account.accountPaymentMethods) {
         setPaymentMethods(account.accountPaymentMethods.map(apm => apm.paymentMethod))
         setSelectedAccount(account)
-        // Reset payment method when account changes
         form.setValue('paymentMethodId', undefined)
       }
     }
   }, [watchedAccountId, accounts, form])
+
+  const handleCreateNewCategory = (newCategory) => {
+    const trimmedCategory = newCategory.trim()
+
+    if (trimmedCategory) {
+      const newCategoryItem = {
+        value: trimmedCategory,
+        label: trimmedCategory
+      }
+
+      const categoryExists = localCategories.some(cat =>
+        cat.value.toLowerCase() === trimmedCategory.toLowerCase()
+      )
+      if (!categoryExists) {
+        setLocalCategories(prev => [...prev, newCategoryItem])
+      }
+      form.setValue('category', trimmedCategory)
+      console.log('Nova categoria criada:', trimmedCategory)
+    }
+  }
 
   const handleSubmit = async (data) => {
     setIsLoading(true)
@@ -106,7 +126,7 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
 
     try {
       const userInfo = getUserInfo()
-      
+
       const requestData = {
         type: data.type,
         name: data.name,
@@ -117,6 +137,10 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
         recurring: data.recurring,
         accountId: parseInt(data.accountId),
         paymentMethodId: parseInt(data.paymentMethodId)
+      }
+
+      if (data.number_installments && data.number_installments > 1) {
+        requestData.number_installments = parseInt(data.number_installments)
       }
 
       const response = await authenticatedFetch(
@@ -137,11 +161,14 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
 
       setSuccess('Transação cadastrada com sucesso!')
       form.reset()
-      
+      setIsInstallment(false)
+      setLocalCategories(categories)
+      refetchCategories()
+
       if (onSuccess) {
         onSuccess()
       }
-      
+
       setTimeout(() => {
         onClose()
         setSuccess('')
@@ -162,12 +189,12 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
+      <DialogContent
         className="!fixed !right-0 !top-0 !left-auto !bottom-0 !h-screen !w-[500px] !max-w-none !rounded-none !border-l 
         !border-r-0 !overflow-y-auto !m-0 !p-6 !translate-x-0 !translate-y-0 !z-50 !bg-background !shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out 
         data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right"
         showCloseButton={true}
-        style={{ 
+        style={{
           position: 'fixed',
           right: 0,
           top: 0,
@@ -181,7 +208,7 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Nova Transação</DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <FormField
@@ -205,8 +232,6 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
                 </FormItem>
               )}
             />
-
-            {/* Nome */}
             <FormField
               control={form.control}
               name="name"
@@ -221,7 +246,6 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
               )}
             />
 
-            {/* Categoria */}
             <FormField
               control={form.control}
               name="category"
@@ -229,23 +253,51 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
                 <FormItem>
                   <FormLabel>Categoria</FormLabel>
                   <Combobox
-                    data={categories}
+                    data={localCategories}
                     onValueChange={field.onChange}
                     value={field.value}
                     type="category"
                   >
-                    <ComboboxTrigger className="w-full" />
+                    <ComboboxTrigger className="w-full">
+                      <span className="flex w-full items-center justify-between gap-2">
+                        {field.value
+                          ? localCategories.find((item) => item.value === field.value)?.label || field.value
+                          : "Selecione uma categoria..."}
+                        <ChevronsUpDown className="shrink-0 text-muted-foreground" size={16} />
+                      </span>
+                    </ComboboxTrigger>
                     <ComboboxContent>
-                      <ComboboxInput placeholder="Buscar categoria..." />
-                      <ComboboxEmpty>Nenhuma categoria encontrada.</ComboboxEmpty>
+                      <ComboboxInput placeholder="Buscar ou criar categoria..." />
+                      <ComboboxEmpty>
+                        <ComboboxCreateNew onCreateNew={handleCreateNewCategory}>
+                          {(inputValue) => (
+                            <div className="flex items-center gap-2">
+                              <span>Criar categoria: "{inputValue}"</span>
+                            </div>
+                          )}
+                        </ComboboxCreateNew>
+                      </ComboboxEmpty>
                       <ComboboxList>
                         <ComboboxGroup>
-                          {categories.map((category) => (
-                            <ComboboxItem key={category.value} value={category.value}>
-                              {category.label}
-                            </ComboboxItem>
-                          ))}
+                          {categoriesLoading ? (
+                            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                              Carregando categorias...
+                            </div>
+                          ) : (
+                            localCategories.map((category) => (
+                              <ComboboxItem key={category.value} value={category.value}>
+                                {category.label}
+                              </ComboboxItem>
+                            ))
+                          )}
                         </ComboboxGroup>
+                        <ComboboxCreateNew onCreateNew={handleCreateNewCategory}>
+                          {(inputValue) => (
+                            <div className="flex items-center gap-2 border-t pt-2 mt-2">
+                              <span>+ Criar nova categoria: "{inputValue}"</span>
+                            </div>
+                          )}
+                        </ComboboxCreateNew>
                       </ComboboxList>
                     </ComboboxContent>
                   </Combobox>
@@ -254,7 +306,6 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
               )}
             />
 
-            {/* Valor */}
             <FormField
               control={form.control}
               name="value"
@@ -262,11 +313,11 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
                 <FormItem>
                   <FormLabel>Valor</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01" 
-                      min="0.01" 
-                      placeholder="0,00" 
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      placeholder="0,00"
                       {...field}
                       onChange={(e) => field.onChange(parseFloat(e.target.value))}
                     />
@@ -276,7 +327,6 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
               )}
             />
 
-            {/* Data */}
             <FormField
               control={form.control}
               name="release_date"
@@ -290,7 +340,7 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
                           variant="outline"
                           className="w-full justify-between"
                         >
-                          {field.value ? new Date(field.value).toLocaleDateString('pt-BR') : "Selecionar data"}
+                          {field.value ? new Date(field.value + 'T00:00:00').toLocaleDateString('pt-BR') : "Selecionar data"}
                           <CalendarIcon className="h-4 w-4" />
                         </Button>
                       </FormControl>
@@ -298,14 +348,17 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
+                        selected={field.value ? new Date(field.value + 'T00:00:00') : undefined}
                         onSelect={(date) => {
                           if (date) {
-                            field.onChange(date.toISOString().split('T')[0])
+                            const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+                            field.onChange(localDate.toISOString().split('T')[0])
                             setDateOpen(false)
                           }
                         }}
                         captionLayout="dropdown"
+                        defaultMonth={new Date()}
+                        locale="pt-BR"
                       />
                     </PopoverContent>
                   </Popover>
@@ -313,8 +366,6 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
                 </FormItem>
               )}
             />
-
-            {/* Descrição */}
             <FormField
               control={form.control}
               name="description"
@@ -365,8 +416,8 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Forma de Pagamento</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(parseInt(value))} 
+                  <Select
+                    onValueChange={(value) => field.onChange(parseInt(value))}
                     value={field.value?.toString()}
                     disabled={!selectedAccount}
                   >
@@ -390,7 +441,6 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
               )}
             />
 
-            {/* Checkboxes */}
             <div className="space-y-3">
               <FormField
                 control={form.control}
@@ -411,44 +461,76 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
               />
 
               <div className="flex flex-row items-start space-x-3 space-y-0">
-                <Checkbox disabled />
+                <Checkbox
+                  checked={isInstallment}
+                  onCheckedChange={(checked) => {
+                    setIsInstallment(checked)
+                    if (!checked) {
+                      form.setValue('number_installments', undefined)
+                    } else {
+                      form.setValue('number_installments', 2)
+                    }
+                  }}
+                />
                 <div className="space-y-1 leading-none">
-                  <Label className="text-muted-foreground">Parcelado (em breve)</Label>
+                  <Label>Parcelado</Label>
                 </div>
               </div>
+
+              {isInstallment && (
+                <FormField
+                  control={form.control}
+                  name="number_installments"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número de Parcelas</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="2"
+                          max="60"
+                          placeholder="Ex: 12"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
-            {/* Mensagens de erro/sucesso */}
             {error && (
               <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md border border-red-200">
                 {error}
               </div>
             )}
-            
+
             {success && (
               <div className="text-green-600 text-sm bg-green-50 p-3 rounded-md border border-green-200">
                 {success}
               </div>
             )}
 
-            {/* Botões */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
+            <div className="flex pt-4 flex-row justify-between">
+              <ButtonC
+                texto={isLoading ? "Carregando..." : "Cancelar"}
+                largura="200px"
+                altura="40px"
                 onClick={onClose}
-                className="flex-1"
                 disabled={isLoading}
               >
                 Cancelar
-              </Button>
-              <Button
+              </ButtonC>
+              <ButtonC
+                texto={isLoading ? "Cadastrando..." : "Lançar"}
+                largura="200px"
+                altura="40px"
                 type="submit"
-                className="flex-1"
                 disabled={isLoading}
               >
-                {isLoading ? 'Cadastrando...' : 'Cadastrar'}
-              </Button>
+              </ButtonC>
             </div>
           </form>
         </Form>
