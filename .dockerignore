@@ -1,0 +1,11 @@
+coverage
+.vscode
+.idea
+cypress-coverage/
+node_modules
+npm-debug.log
+.git
+.next
+coverage
+.vscode
+.idea

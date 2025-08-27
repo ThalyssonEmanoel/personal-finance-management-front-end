@@ -1,0 +1,83 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ develop, master ]
+  pull_request:
+    branches: [ develop, master ]
+
+jobs:
+  buildar-docker-front:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')) ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'develop' || github.base_ref == 'master'))
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Configurar ambiente
+        run: |
+          cp .env.example .env.local
+          echo "AUTH_SECRET=${{ secrets.AUTH_SECRET }}" >> .env.local
+          echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" >> .env.local
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.IMAGEM_DOCKER }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            AUTH_SECRET=${{ secrets.AUTH_SECRET }}
+
+  fazer-deploy:
+    runs-on: ubuntu-latest
+    needs: buildar-docker-front
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')) ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'develop' || github.base_ref == 'master'))
+
+    steps:
+      - name: Criar pasta kube
+        run: mkdir -p ~/.kube
+  
+      - name: Criar kubeconfig a partir do secret
+        run: echo "${KUBECTL_CONFIG}" > ~/.kube/config
+        env:
+          KUBECTL_CONFIG: ${{ secrets.KUBECTL_CONFIG }}
+  
+      - run: chmod 600 ~/.kube/config
+  
+      - uses: actions/checkout@v4
+  
+      - uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+  
+      - name: Verificar cluster
+        run: |
+          kubectl config get-contexts
+          kubectl get nodes
+
+      - name: Remover deployment anterior
+        run: kubectl delete deployment personal-finance || true
+
+      - run: sleep 10
+
+      - run: kubectl apply -f deploy/personal-finance-deployment.yaml
+
+      - run: sleep 60
+
+      - name: Verificar status do deployment
+        run: |
+          kubectl get pods
+          kubectl describe deploy/personal-finance
+          kubectl logs deploy/personal-finance
