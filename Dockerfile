@@ -22,7 +22,7 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED 1
  
-RUN corepack enable npm && npm build
+RUN corepack enable npm && npm run build
  
 # Production image, copy all the files and run next
 FROM base AS runner
