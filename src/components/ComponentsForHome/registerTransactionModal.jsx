@@ -50,7 +50,6 @@ import { createTransactionSchema } from '@/schemas/TransactionSchemas'
 import { useAccounts, useTransactionCategories } from '@/utils/apiClient'
 import { useAuth } from '@/hooks/useAuth'
 import ButtonC from '../Custom-Button'
-import { se } from 'date-fns/locale'
 
 const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false)
@@ -61,11 +60,9 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
   const [paymentMethods, setPaymentMethods] = useState([])
   const [localCategories, setLocalCategories] = useState([])
   const [isInstallment, setIsInstallment] = useState(false)
-
   const { accounts, loading: accountsLoading } = useAccounts()
   const { categories, loading: categoriesLoading, refetch: refetchCategories } = useTransactionCategories()
   const { getUserInfo, authenticatedFetch } = useAuth()
-
   const form = useForm({
     resolver: zodResolver(createTransactionSchema),
     defaultValues: {
@@ -81,8 +78,8 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
       paymentMethodId: undefined,
     },
   })
-
   const watchedAccountId = form.watch('accountId')
+
 
   useEffect(() => {
     setLocalCategories(categories)
@@ -280,28 +277,49 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="value"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        placeholder="0,00"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                render={({ field }) => {
+                  const [displayValue, setDisplayValue] = React.useState("")
+                  const formatCurrency = (rawValue) => {
+                    const numericValue = rawValue.replace(/\D/g, "")
+                    const valueInReais = (parseInt(numericValue || "0", 10) / 100).toFixed(2)
+                    return new Intl.NumberFormat("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    }).format(valueInReais)
+                  }
+                  const handleChange = (e) => {
+                    const rawValue = e.target.value
+                    const formatted = formatCurrency(rawValue)
+                    setDisplayValue(formatted)
+                    const numericValue = Number(
+                      formatted.replace(/\D/g, "")
+                    ) / 100
 
+                    field.onChange(numericValue)
+                  }
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Valor</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="R$ 0,00"
+                          value={displayValue}
+                          onChange={handleChange}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
+              />
               <FormField
                 control={form.control}
                 name="release_date"

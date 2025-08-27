@@ -75,11 +75,12 @@ export function useTransactions() {
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [pagination, setPagination] = useState({ page: 1, total: 0, limit: 10 })
+  const [pagination, setPagination] = useState({ page: 1, total: 0, limit: 5 })
   const [totalIncome, setTotalIncome] = useState(0)
   const [totalExpense, setTotalExpense] = useState(0)
   const [topIncomes, setTopIncomes] = useState([])
   const [topExpenses, setTopExpenses] = useState([])
+  const [lastRequestFilters, setLastRequestFilters] = useState(null)
   const { getUserInfo, isAuthenticated, authenticatedFetch, status } = useAuth()
   const initialLoadDone = useRef(false)
 
@@ -94,6 +95,14 @@ export function useTransactions() {
       setError('ID do usuário não encontrado')
       return
     }
+
+    // Verificar se já fizemos essa mesma requisição recentemente
+    const filtersString = JSON.stringify(filters)
+    if (lastRequestFilters === filtersString && transactions.length > 0) {
+      console.log('TransactionsTable - Usando dados em cache, evitando nova requisição')
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -103,6 +112,8 @@ export function useTransactions() {
       if (filters.type && filters.type !== 'All') queryParams.append('type', filters.type)
       if (filters.accountId && filters.accountId !== 'All') queryParams.append('accountId', filters.accountId)
       if (filters.release_date) queryParams.append('release_date', filters.release_date)
+      if (filters.limit) queryParams.append('limit', filters.limit.toString())
+      if (filters.page) queryParams.append('page', filters.page.toString())
 
       const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParams.toString()}`
       // console.log('Fazendo requisição para:', url)
@@ -122,7 +133,7 @@ export function useTransactions() {
 
       const transactionsData = (data.data && data.data.transactions) || []
       setTransactions(transactionsData)
-      
+
       // Extrair totais da resposta da API
       setTotalIncome(data.data?.totalIncome || 0)
       setTotalExpense(data.data?.totalExpense || 0)
@@ -132,27 +143,30 @@ export function useTransactions() {
         .sort((a, b) => new Date(b.release_date) - new Date(a.release_date))
         .slice(0, 3)
         .map(t => t.name)
-      
+
       const expenseTransactions = transactionsData
         .filter(t => t.type === 'expense')
         .sort((a, b) => new Date(b.release_date) - new Date(a.release_date))
         .slice(0, 3)
         .map(t => t.name)
-      
+
       setTopIncomes(incomeTransactions)
       setTopExpenses(expenseTransactions)
-      
+
       setPagination({
-        page: data.page || 1,
+        page: data.page || filters.page || 1,
         total: data.total || 0,
-        limit: data.limite || data.limit || 10
+        limit: data.limite || data.limit || filters.limit || 5
       })
+
+      // Salvar os filtros da última requisição bem-sucedida
+      setLastRequestFilters(filtersString)
     } catch (err) {
       setError(err.message || 'Erro ao buscar transações')
     } finally {
       setLoading(false)
     }
-  }, [getUserInfo, isAuthenticated, authenticatedFetch])
+  }, [getUserInfo, isAuthenticated, authenticatedFetch, lastRequestFilters, transactions.length])
 
   // Carregar apenas uma vez quando autenticado
   useEffect(() => {
@@ -162,16 +176,23 @@ export function useTransactions() {
     }
   }, [status, fetchTransactions])
 
-  return { 
-    transactions, 
-    loading, 
-    error, 
-    pagination, 
-    totalIncome, 
-    totalExpense, 
-    topIncomes, 
-    topExpenses, 
-    refetch: fetchTransactions 
+  // Função para forçar uma nova requisição (ignora cache)
+  const forceRefetch = useCallback(async (filters = {}) => {
+    setLastRequestFilters(null)
+    await fetchTransactions(filters)
+  }, [fetchTransactions])
+
+  return {
+    transactions,
+    loading,
+    error,
+    pagination,
+    totalIncome,
+    totalExpense,
+    topIncomes,
+    topExpenses,
+    refetch: fetchTransactions,
+    forceRefetch
   }
 }
 
@@ -181,8 +202,6 @@ export function useTransactionCategories() {
   const [error, setError] = useState(null)
   const { getUserInfo, isAuthenticated, authenticatedFetch, status } = useAuth()
   const initialLoadDone = useRef(false)
-
-  // Categorias estáticas padrão
   const defaultCategories = React.useMemo(() => [
     { value: 'Transporte', label: 'Transporte' },
     { value: 'Moradia', label: 'Moradia' },
@@ -233,11 +252,16 @@ export function useTransactionCategories() {
 
       // Combinar categorias existentes com as padrão
       const combinedCategories = new Map()
-      
+
       // Adicionar categorias padrão
       defaultCategories.forEach(cat => {
-        combinedCategories.set(cat.value, cat)
+        const normalizedValue = cat.value.toLowerCase().replace(/\s+/g, '_')
+        combinedCategories.set(normalizedValue, {
+          value: normalizedValue,
+          label: cat.label
+        })
       })
+
 
       // Adicionar categorias existentes (sobrescrever se já existir)
       existingCategories.forEach(category => {
@@ -306,7 +330,7 @@ export function useDeleteTransaction() {
       }
 
       const data = await response.json()
-      
+
       if (data.error) {
         throw new Error(data.message || 'Erro ao deletar transação')
       }
