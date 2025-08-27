@@ -30,6 +30,8 @@ spec:
               secretKeyRef:
                 name: personal-finance-front-secrets
                 key: NEXT_PUBLIC_API_URL
+          - name: NEXTAUTH_URL
+            value: "https://personal-finance.app.fslab.dev"
 ---
 apiVersion: v1
 kind: Service
