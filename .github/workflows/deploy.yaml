@@ -74,7 +74,7 @@ jobs:
 
       - run: kubectl apply -f deploy/personal-finance-deployment.yaml
 
-      - run: sleep 30
+      - run: sleep 60
 
       - name: Verificar status do deployment
         run: |
