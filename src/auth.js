@@ -31,20 +31,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-      // Quando o usuário faz login (user existe)
       if (user) {
         token.user = user;
       }
 
-      // Quando chamamos update() no frontend
       if (trigger === "update" && session?.user) {
         token.user = {
           ...token.user,
-          ...session.user, // aplica as alterações do update()
+          ...session.user,
         };
       }
 
-      // Renovação de token (sua lógica atual)
       if (token.user?.accessToken && token.user?.refreshToken) {
         const payload = JSON.parse(atob(token.user.accessToken.split('.')[1]));
         const currentTime = Date.now() / 1000;
@@ -67,7 +64,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token.user) {
         session.user = {
           ...session.user,
-          ...token.user, // agora sempre pega os dados mais recentes
+          ...token.user,
         };
       }
       return session;
