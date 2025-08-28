@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CalendarIcon, ChevronsUpDown } from "lucide-react"
 import {
@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Calendar } from "@/components/ui/calendar"
@@ -47,24 +47,21 @@ import {
   ComboboxCreateNew,
 } from '@/components/ui/shadcn-io/combobox'
 import { createTransactionSchema } from '@/schemas/TransactionSchemas'
-import { useAccounts, useTransactionCategories } from '@/utils/apiClient'
-import { useAuth } from '@/hooks/useAuth'
+import { useAccountsQuery, useTransactionCategoriesQuery, useCreateTransactionMutation } from '@/utils/apiClient';
 import ButtonC from '../Custom-Button'
 import { se } from 'date-fns/locale'
 
-const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+const RegisterTransactionModal = ({ isOpen, onClose }) => {
   const [dateOpen, setDateOpen] = useState(false)
-  const [selectedAccount, setSelectedAccount] = useState(null)
   const [paymentMethods, setPaymentMethods] = useState([])
-  const [localCategories, setLocalCategories] = useState([])
-  const [isInstallment, setIsInstallment] = useState(false)
+  const [localCategories, setLocalCategories] = useState([]);
+  const [isInstallment, setIsInstallment] = useState(false);
+  const { data: accountsData, isLoading: accountsLoading } = useAccountsQuery();
+  const { data: categoriesData, isLoading: categoriesLoading } = useTransactionCategoriesQuery();
+  const { mutate: createTransaction, isPending, isError, error, isSuccess } = useCreateTransactionMutation();
 
-  const { accounts, loading: accountsLoading } = useAccounts()
-  const { categories, loading: categoriesLoading, refetch: refetchCategories } = useTransactionCategories()
-  const { getUserInfo, authenticatedFetch } = useAuth()
+  const accounts = accountsData?.accounts ?? [];
+  const categories = categoriesData ?? [];
 
   const form = useForm({
     resolver: zodResolver(createTransactionSchema),
@@ -100,84 +97,53 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
   }, [watchedAccountId, accounts, form])
 
   const handleCreateNewCategory = (newCategory) => {
-    const trimmedCategory = newCategory.trim()
-
+    const trimmedCategory = newCategory.trim();
     if (trimmedCategory) {
       const newCategoryItem = {
         value: trimmedCategory,
         label: trimmedCategory
-      }
-
+      };
       const categoryExists = localCategories.some(cat =>
         cat.value.toLowerCase() === trimmedCategory.toLowerCase()
-      )
+      );
       if (!categoryExists) {
-        setLocalCategories(prev => [...prev, newCategoryItem])
+        setLocalCategories(prev => [...prev, newCategoryItem]);
       }
-      form.setValue('category', trimmedCategory)
+      form.setValue('category', trimmedCategory);
       // console.log('Nova categoria criada:', trimmedCategory)
     }
   }
 
   const handleSubmit = async (data) => {
-    setIsLoading(true)
-    setError('')
-    setSuccess('')
-
-    try {
-      const userInfo = getUserInfo()
-      const requestData = {
-        type: data.type,
-        name: data.name,
-        category: data.category,
-        value: parseFloat(data.value),
-        release_date: data.release_date,
-        description: data.description || '',
-        recurring: data.recurring,
-        accountId: parseInt(data.accountId),
-        paymentMethodId: parseInt(data.paymentMethodId)
-      }
-
-      if (data.number_installments && data.number_installments > 1) {
-        requestData.number_installments = parseInt(data.number_installments)
-      }
-
-      const response = await authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/transactions?userId=${userInfo.id}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestData),
-        }
-      )
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Erro ao cadastrar transação')
-      }
-
-      setSuccess('Transação cadastrada com sucesso!')
-      form.reset()
-      setIsInstallment(false)
-      setLocalCategories(categories)
-      refetchCategories()
-
-      if (onSuccess) {
-        onSuccess()
-      }
-
-      setTimeout(() => {
-        onClose()
-        setSuccess('')
-      }, 1500)
-    } catch (err) {
-      setError(err.message || 'Erro ao cadastrar transação')
-    } finally {
-      setIsLoading(false)
+    const requestData = {
+      type: data.type,
+      name: data.name,
+      category: data.category,
+      value: parseFloat(data.value),
+      release_date: data.release_date,
+      description: data.description || '',
+      recurring: data.recurring,
+      accountId: parseInt(data.accountId),
+      paymentMethodId: data.paymentMethodId ? parseInt(data.paymentMethodId) : undefined,
     }
-  }
+
+    if (data.number_installments && data.number_installments > 1) {
+      requestData.number_installments = parseInt(data.number_installments)
+    }
+    createTransaction(requestData, {
+      onSuccess: () => {
+        // O onSuccess da mutation cuida da invalidação.
+        // Aqui, cuidamos apenas do estado da UI do modal.
+        form.reset();
+        setTimeout(() => {
+          onClose();
+        }, 500); // Fecha o modal após 0.5s
+      },
+    });
+  };
+
+  const selectedAccount = accounts.find(acc => acc.id === parseInt(watchedAccountId));
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -476,34 +442,34 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               {/*Usar o componente toast do shadcn mais para frente*/}
-              {error && (
+              {isError && (
                 <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md border border-red-200">
-                  {error}
+                  {error.message}
                 </div>
               )}
 
-              {success && (
+              {isSuccess && (
                 <div className="text-green-600 text-sm bg-green-50 p-3 rounded-md border border-green-200">
-                  {success}
+                  Transação cadastrada com sucesso!
                 </div>
               )}
 
               <div className="flex pt-4 flex-row justify-between">
                 <ButtonC
-                  texto={isLoading ? "Carregando..." : "Cancelar"}
+                  texto={"Cancelar"}
                   largura="200px"
                   altura="40px"
                   onClick={onClose}
-                  disabled={isLoading}
+                  disabled={isPending}
                 >
                   Cancelar
                 </ButtonC>
                 <ButtonC
-                  texto={isLoading ? "Cadastrando..." : "Lançar"}
+                  texto={isPending ? "Cadastrando..." : "Lançar"}
                   largura="200px"
                   altura="40px"
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isPending}
                 >
                 </ButtonC>
               </div>
@@ -512,7 +478,6 @@ const RegisterTransactionModal = ({ isOpen, onClose, onSuccess }) => {
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-
-export default RegisterTransactionModal
+export default RegisterTransactionModal;

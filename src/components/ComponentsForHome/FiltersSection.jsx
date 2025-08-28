@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDownIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -19,40 +19,29 @@ import {
 } from "@/components/ui/select"
 import ButtonC from '@/components/Custom-Button'
 import RegisterTransactionModal from './registerTransactionModal'
-import { useAccounts } from '../../utils/apiClient.js'
+import { useAccountsQuery } from '../../utils/apiClient.js';
 
-const FiltersSection = ({ onFiltersChange, onTransactionSuccess }) => {
-  const [open, setOpen] = useState(false)
-  const [date, setDate] = useState(undefined)
-  const [selectedAccount, setSelectedAccount] = useState("All")
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const { accounts, loading: accountsLoading, error: accountsError, refetch: refetchAccounts } = useAccounts()
+const FiltersSection = ({ onFiltersChange }) => {
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState(undefined);
+  const [selectedAccount, setSelectedAccount] = useState("All");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { data: accountsData, isLoading: accountsLoading, isError, error } = useAccountsQuery();
+  const accounts = accountsData?.accounts ?? [];
+  const lastFiltersRef = useRef({});
 
-  // Aplicar filtros automaticamente quando houver mudanças
-  React.useEffect(() => {
+  useEffect(() => {
     const filters = {
       accountId: selectedAccount !== "All" ? selectedAccount : undefined,
-      release_date: date ? date.toISOString().split('T')[0] : undefined 
-    }
-    
-    if (onFiltersChange) {
-      onFiltersChange(filters)
-    }
-  }, [selectedAccount, date, onFiltersChange]) 
-  const handleTransactionSuccess = () => {
-    refetchAccounts()
-    if (onFiltersChange) {
-      const filters = {
-        accountId: selectedAccount !== "All" ? selectedAccount : undefined,
-        release_date: date ? date.toISOString().split('T')[0] : undefined 
+      release_date: date ? date.toISOString().split('T')[0] : undefined
+    };
+    if (JSON.stringify(filters) !== JSON.stringify(lastFiltersRef.current)) {
+      lastFiltersRef.current = filters;
+      if (onFiltersChange) {
+        onFiltersChange(filters);
       }
-      onFiltersChange(filters)
     }
-    // Chamar callback da página home se disponível
-    if (onTransactionSuccess) {
-      onTransactionSuccess()
-    }
-  }
+  }, [selectedAccount, date, onFiltersChange]);
 
   return (
     <div className="px-20 mt-10 flex flex-row justify-between">
@@ -72,9 +61,9 @@ const FiltersSection = ({ onFiltersChange, onTransactionSuccess }) => {
                     Carregando contas...
                   </SelectItem>
                 )}
-                {accountsError && !accountsLoading && (
+                {isError && !accountsLoading && (
                   <SelectItem value="error" disabled>
-                    Erro: {accountsError}
+                    Erro: {error?.message || 'Erro ao carregar contas'}
                   </SelectItem>
                 )}
                 {accounts && accounts.length > 0 && accounts.map((account) => (
@@ -82,7 +71,7 @@ const FiltersSection = ({ onFiltersChange, onTransactionSuccess }) => {
                     {account.name || account.nome || account.accountName || `Conta ${account.id}`}
                   </SelectItem>
                 ))}
-                {accounts && accounts.length === 0 && !accountsLoading && !accountsError && (
+                {accounts && accounts.length === 0 && !accountsLoading && !isError && (
                   <SelectItem value="empty" disabled>
                     Nenhuma conta encontrada
                   </SelectItem>
@@ -121,19 +110,18 @@ const FiltersSection = ({ onFiltersChange, onTransactionSuccess }) => {
         </div>
       </div>
       <div className="mt-8">
-        <ButtonC 
-          texto="Lançar transação" 
-          largura="120px" 
-          altura="40px" 
+        <ButtonC
+          texto="Lançar transação"
+          largura="120px"
+          altura="40px"
           type="button"
           onClick={() => setIsModalOpen(true)}
         />
       </div>
-      
+
       <RegisterTransactionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={handleTransactionSuccess}
       />
     </div>
   )

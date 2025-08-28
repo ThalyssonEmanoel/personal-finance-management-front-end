@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react';
 import { MoreHorizontal, Search, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,22 +43,77 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import ButtonC from '@/components/Custom-Button'
-import { useTransactions, useDeleteTransaction } from '../../utils/apiClient.js'
+import { useTransactionsQuery, useDeleteTransactionMutation } from '../../utils/apiClient.js';
 import ReportDownloadModal from './ReportDonwloadModal'
+const ITEMS_PER_PAGE = 5
 
-const TransactionsTable = ({ filters = {}, onTransactionChange }) => {
+const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange }) => {
+  const [localFilters, setLocalFilters] = useState({
+    page: 1,
+    limit: ITEMS_PER_PAGE,
+    type: 'All',
+  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState(null);
+  const queryFilters = useMemo(() => ({
+    ...externalFilters,
+    ...localFilters,
+  }), [externalFilters, localFilters]);
+  // 2. Chama o hook useTransactionsQuery. A mágica acontece aqui!
+  const { data, isLoading, isError, error, refetch } = useTransactionsQuery(queryFilters);
+  const transactionsData = data?.transactions ?? [];
+  const pagination = data?.pagination ?? { total: 0, page: 1 };
+  const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteTransactionMutation();
+
+  const filteredTransactions = useMemo(() => {
+    if (!searchTerm) return transactionsData;
+    return transactionsData.filter(transaction =>
+      Object.values(transaction).some(value =>
+        String(value)?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  }, [transactionsData, searchTerm]);
+
+  const handleTypeFilterChange = (value) => {
+    setLocalFilters(prev => ({ ...prev, type: value, page: 1 }));
+  };
+
+  const goToPage = (page) => {
+    setLocalFilters(prev => ({ ...prev, page }));
+  };
+
+  const handleDeleteClick = (transaction) => {
+    setTransactionToDelete(transaction);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!transactionToDelete) return;
+
+    deleteTransaction(transactionToDelete.id, {
+      onSuccess: () => {
+        setIsDeleteModalOpen(false);
+        setTransactionToDelete(null);
+        if (onTransactionChange) onTransactionChange();
+      },
+      onError: (err) => {
+        console.error('Erro ao deletar transação:', err);
+      }
+    });
+  };
+
+  const totalPages = Math.ceil(pagination.total / ITEMS_PER_PAGE);
+
+
   const [sorting, setSorting] = useState([])
   const [columnFilters, setColumnFilters] = useState([])
   const [columnVisibility, setColumnVisibility] = useState({})
   const [rowSelection, setRowSelection] = useState({})
-  const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState('All')
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [transactionToDelete, setTransactionToDelete] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
   const lastFiltersRef = React.useRef({})
-  const { transactions, loading, error, pagination, refetch } = useTransactions()
-  const { deleteTransaction, loading: deleteLoading } = useDeleteTransaction()
 
   const getDeleteMessage = (transaction) => {
     if (transaction?.number_installments && transaction.number_installments > 1) {
@@ -68,26 +123,6 @@ const TransactionsTable = ({ filters = {}, onTransactionChange }) => {
       return "Atenção! Caso exclua essa transação não haverá mais o lançamento recorrente dela."
     }
     return "Você tem certeza que deseja apagar essa transação?"
-  }
-
-  // Função para abrir o modal de confirmação
-  const handleDeleteClick = (transaction) => {
-    setTransactionToDelete(transaction)
-    setIsDeleteModalOpen(true)
-  }
-
-  // Função para confirmar a exclusão
-  const handleConfirmDelete = async () => {
-    if (!transactionToDelete) return
-
-    try {
-      await deleteTransaction(transactionToDelete.id)
-      setIsDeleteModalOpen(false)
-      setTransactionToDelete(null)
-      if (onTransactionChange) onTransactionChange(); 
-    } catch (error) {
-      console.error('Erro ao deletar transação:', error)
-    }
   }
 
   // Função para cancelar a exclusão
@@ -183,10 +218,12 @@ const TransactionsTable = ({ filters = {}, onTransactionChange }) => {
 
   // Aplicar filtros quando eles mudarem
   React.useEffect(() => {
-    console.log('TransactionsTable - Aplicando filtros:', filters, 'typeFilter:', typeFilter)
+    console.log('TransactionsTable - Aplicando filtros:', externalFilters, 'typeFilter:', typeFilter)
     const finalFilters = {
-      ...filters,
-      type: typeFilter !== 'All' ? typeFilter : undefined
+      ...externalFilters,
+      type: typeFilter !== 'All' ? typeFilter : undefined,
+      limit: ITEMS_PER_PAGE,
+      page: currentPage
     }
 
     // Evita chamadas desnecessárias comparando se realmente mudou algo
@@ -196,21 +233,46 @@ const TransactionsTable = ({ filters = {}, onTransactionChange }) => {
       lastFiltersRef.current = finalFilters
       refetch(finalFilters)
     }
-  }, [filters, typeFilter]) 
+  }, [externalFilters, typeFilter, currentPage])
 
-  // Filtrar transações localmente por nome (busca)
-  const filteredTransactions = React.useMemo(() => {
-    let filtered = transactions || []
+  const handleSearch = () => {
+    console.log('Busca aplicada:', searchTerm)
+  }
 
-    // Filtro por termo de busca
-    if (searchTerm) {
-      filtered = filtered.filter(transaction =>
-        transaction.name?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+  // Funções de navegação da paginação
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  // Gerar números das páginas para exibir
+  const getVisiblePages = () => {
+    const visiblePages = []
+    const maxVisiblePages = 3
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        visiblePages.push(i)
+      }
+    } else {
+      if (currentPage <= 2) {
+        visiblePages.push(1, 2, 3)
+      } else if (currentPage >= totalPages - 1) {
+        visiblePages.push(totalPages - 2, totalPages - 1, totalPages)
+      } else {
+        visiblePages.push(currentPage - 1, currentPage, currentPage + 1)
+      }
     }
 
-    return filtered
-  }, [transactions, searchTerm])
+    return visiblePages
+  }
 
   const table = useReactTable({
     data: filteredTransactions,
@@ -218,7 +280,6 @@ const TransactionsTable = ({ filters = {}, onTransactionChange }) => {
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
@@ -229,15 +290,9 @@ const TransactionsTable = ({ filters = {}, onTransactionChange }) => {
       columnVisibility,
       rowSelection,
     },
-  })
+  });
 
-  const handleTypeFilterChange = (value) => {
-    setTypeFilter(value)
-  }
-
-  const handleSearch = () => {
-    console.log('Busca aplicada:', searchTerm)
-  }
+  const success = !error && filteredTransactions.length > 0
 
   return (
     <div>
@@ -299,7 +354,7 @@ const TransactionsTable = ({ filters = {}, onTransactionChange }) => {
                 )}
               </TableHeader>
               <TableBody>
-                {loading ? (
+                {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={columns.length} className="h-24 text-center">
                       Carregando transações...
@@ -324,6 +379,12 @@ const TransactionsTable = ({ filters = {}, onTransactionChange }) => {
                       )}
                     </TableRow>
                   )
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center text-red-600">
+                      Nenhum resultado encontrado.{error}
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   <TableRow>
                     <TableCell colSpan={columns.length} className="h-24 text-center">
@@ -376,7 +437,7 @@ const TransactionsTable = ({ filters = {}, onTransactionChange }) => {
                 variant="outline"
                 onClick={handleCancelDelete}
                 className="flex-1"
-                disabled={deleteLoading}
+                disabled={isDeleting}
               >
                 Cancelar
               </Button>
@@ -384,9 +445,9 @@ const TransactionsTable = ({ filters = {}, onTransactionChange }) => {
                 variant="destructive"
                 onClick={handleConfirmDelete}
                 className="flex-1"
-                disabled={deleteLoading}
+                disabled={isDeleting}
               >
-                {deleteLoading ? 'Excluindo...' : 'Excluir'}
+                {isDeleting ? 'Excluindo...' : 'Excluir'}
               </Button>
             </DialogFooter>
           </div>

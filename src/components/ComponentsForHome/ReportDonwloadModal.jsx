@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useAuth } from "@/hooks/useAuth"
-import { useAccounts } from '@/utils/apiClient'
+import { useAccountsQuery, useDownloadReportMutation } from '@/utils/apiClient';
 
 export function ReportDownloadModal({ isOpen, onClose }) {
   const [startDate, setStartDate] = useState(null);
@@ -33,113 +33,60 @@ export function ReportDownloadModal({ isOpen, onClose }) {
   const [endDateOpen, setEndDateOpen] = useState(false);
   const [type, setType] = useState('all');
   const [accountId, setAccountId] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-
-  const { getUserInfo, authenticatedFetch } = useAuth();
-  const { accounts } = useAccounts();
+  const { getUserInfo } = useAuth();
+  const { data, isLoading: isLoadingAccounts } = useAccountsQuery();
+  const { mutate: downloadReport, isPending, isError, error, isSuccess } = useDownloadReportMutation();
+  const accounts = data?.accounts ?? [];
   const user = getUserInfo();
 
   if (!isOpen) return null;
 
   const validateDates = () => {
     if (!startDate || !endDate) {
-      setError('Por favor, selecione as datas de início e fim.');
-      return false;
+      return { isValid: false, message: 'Por favor, selecione as datas de início e fim.' };
     }
 
     if (startDate > endDate) {
-      setError('A data de início deve ser anterior à data de fim.');
-      return false;
+      return { isValid: false, message: 'A data de início deve ser anterior à data de fim.' };
     }
-
-    return true;
+    return { isValid: true };
   };
 
-  const handleDownload = async () => {
-    setError('');
-    setSuccess('');
-
-    if (!validateDates()) return;
+  const handleDownload = () => {
+    const validation = validateDates();
+    if (!validation.isValid) {
+      // Você pode ter um estado local para erros de formulário se quiser
+      alert(validation.message);
+      return;
+    }
 
     if (!user?.id) {
-      setError('Usuário não encontrado.');
+      alert('Usuário não encontrado.');
       return;
     }
 
     setIsLoading(true);
 
-    try {
-      const queryParams = new URLSearchParams({
-        userId: user.id.toString(),
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
-        type
-      });
+    downloadReport({ startDate, endDate, type, accountId }, {
+      onSuccess: (blob) => {
+        // Lógica para criar o link e iniciar o download
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `relatorio.pdf`; // Nome do arquivo
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
 
-      // Adiciona accountId apenas se foi selecionado
-      if (accountId && accountId !== 'all') {
-        queryParams.append('accountId', accountId);
+        setTimeout(() => {
+          onClose();
+        }, 2000);
       }
-
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions/download?${queryParams.toString()}`;
-      console.log('Tentando baixar relatório da URL:', url);
-      
-      const response = await authenticatedFetch(url, {
-        method: 'GET',
-      });
-
-      console.log('Resposta da API:', response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Erro na resposta da API' }));
-        console.error('Erro na resposta:', errorData);
-        throw new Error(errorData.message || `Erro HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      // Converte a resposta para blob
-      const blob = await response.blob();
-      
-      // Cria um URL para o blob
-      const downloadUrl = window.URL.createObjectURL(blob);
-      
-      // Cria um link temporário para download
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `Lista_de_transações_${startDate.toISOString().split('T')[0]}_a_${endDate.toISOString().split('T')[0]}.pdf`;
-      
-      // Adiciona o link ao DOM, clica nele e remove
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Libera o URL do blob
-      window.URL.revokeObjectURL(downloadUrl);
-
-      setSuccess('Relatório baixado com sucesso!');
-      
-      // Limpa os campos após o sucesso
-      setTimeout(() => {
-        setSuccess('');
-        setStartDate(null);
-        setEndDate(null);
-        setType('all');
-        setAccountId('');
-        onClose();
-      }, 2000);
-
-    } catch (err) {
-      console.error('Erro ao baixar relatório:', err);
-      setError(err.message || 'Erro ao baixar relatório. Tente novamente.');
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   const handleClose = () => {
-    setError('');
-    setSuccess('');
     setStartDate(null);
     setEndDate(null);
     setType('all');
@@ -166,17 +113,16 @@ export function ReportDownloadModal({ isOpen, onClose }) {
         <div className="flex w-full max-w-sm flex-col gap-6">
           <Card>
             <CardContent className="grid gap-6 pt-6">
-              {error && (
+              {isError && (
                 <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
                   {error}
                 </div>
               )}
-              {success && (
+              {isSuccess && (
                 <div className="text-green-500 text-sm text-center bg-green-50 p-2 rounded">
-                  {success}
+                  Download iniciado com sucesso!
                 </div>
               )}
-
               <div className="grid gap-2">
                 <Label className="text-base font-medium text-gray-700">Data de início *</Label>
                 <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
@@ -266,7 +212,7 @@ export function ReportDownloadModal({ isOpen, onClose }) {
                 </Select>
               </div>
             </CardContent>
-            
+
             <CardFooter className="flex gap-3">
               <ButtonC
                 texto="Cancelar"
