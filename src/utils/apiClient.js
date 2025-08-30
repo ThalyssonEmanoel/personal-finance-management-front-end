@@ -40,7 +40,6 @@ export function useAccountsQuery() {
   });
 }
 
-
 /**
  * @hook useTransactions
  * Busca transações paginadas e filtradas.

@@ -49,7 +49,6 @@ import {
 import { createTransactionSchema } from '@/schemas/TransactionSchemas'
 import { useAccountsQuery, useTransactionCategoriesQuery, useCreateTransactionMutation } from '@/utils/apiClient';
 import ButtonC from '../Custom-Button'
-import { se } from 'date-fns/locale'
 
 const RegisterTransactionModal = ({ isOpen, onClose }) => {
   const [dateOpen, setDateOpen] = useState(false)
@@ -59,9 +58,10 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
   const { data: accountsData, isLoading: accountsLoading } = useAccountsQuery();
   const { data: categoriesData, isLoading: categoriesLoading } = useTransactionCategoriesQuery();
   const { mutate: createTransaction, isPending, isError, error, isSuccess } = useCreateTransactionMutation();
-
   const accounts = accountsData?.accounts ?? [];
+  // categoriesData pode ser undefined no início, então default para []
   const categories = categoriesData ?? [];
+
 
   const form = useForm({
     resolver: zodResolver(createTransactionSchema),
@@ -78,39 +78,45 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
       paymentMethodId: undefined,
     },
   })
-
   const watchedAccountId = form.watch('accountId')
+  const currentSelectedAccount = accounts.find(acc => acc.id === parseInt(watchedAccountId));
 
-  useEffect(() => {
-    setLocalCategories(categories)
-  }, [categories])
 
+  // Atualiza métodos de pagamento ao trocar de conta
   useEffect(() => {
-    if (watchedAccountId && accounts.length > 0) {
-      const account = accounts.find(acc => acc.id === parseInt(watchedAccountId))
-      if (account && account.accountPaymentMethods) {
-        setPaymentMethods(account.accountPaymentMethods.map(apm => apm.paymentMethod))
-        setSelectedAccount(account)
-        form.setValue('paymentMethodId', undefined)
-      }
+    if (currentSelectedAccount && currentSelectedAccount.accountPaymentMethods) {
+      setPaymentMethods(currentSelectedAccount.accountPaymentMethods.map(apm => apm.paymentMethod));
+      form.setValue('paymentMethodId', undefined);
+    } else {
+      setPaymentMethods([]);
     }
-  }, [watchedAccountId, accounts, form])
+  }, [currentSelectedAccount, form]);
+
+  // Sempre que categoriesData mudar, atualiza localCategories para garantir que as categorias estáticas e do backend estejam presentes
+  useEffect(() => {
+    if (Array.isArray(categoriesData)) {
+      setLocalCategories(categoriesData);
+    } else {
+      setLocalCategories([]);
+    }
+  }, [categoriesData]);
 
   const handleCreateNewCategory = (newCategory) => {
     const trimmedCategory = newCategory.trim();
     if (trimmedCategory) {
+      // Normaliza o value igual ao backend
+      const normalizedValue = trimmedCategory.toLowerCase().replace(/\s+/g, '_');
       const newCategoryItem = {
-        value: trimmedCategory,
+        value: normalizedValue,
         label: trimmedCategory
       };
       const categoryExists = localCategories.some(cat =>
-        cat.value.toLowerCase() === trimmedCategory.toLowerCase()
+        cat.value.toLowerCase() === normalizedValue
       );
       if (!categoryExists) {
         setLocalCategories(prev => [...prev, newCategoryItem]);
       }
-      form.setValue('category', trimmedCategory);
-      // console.log('Nova categoria criada:', trimmedCategory)
+      form.setValue('category', normalizedValue);
     }
   }
 
@@ -137,7 +143,7 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
         form.reset();
         setTimeout(() => {
           onClose();
-        }, 500); // Fecha o modal após 0.5s
+        }, 1000); // Fecha o modal após 0.5s
       },
     });
   };
@@ -209,7 +215,7 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
                       <ComboboxTrigger className="w-full">
                         <span className="flex w-full items-center justify-between gap-2">
                           {field.value
-                            ? localCategories.find((item) => item.value === field.value)?.label || field.value
+                            ? (localCategories.find((item) => item.value === field.value)?.label || field.value)
                             : "Selecione uma categoria"}
                           <ChevronsUpDown className="shrink-0 text-muted-foreground" size={16} />
                         </span>
@@ -250,22 +256,45 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
               <FormField
                 control={form.control}
                 name="value"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        placeholder="0,00"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const [displayValue, setDisplayValue] = React.useState("")
+                  const formatCurrency = (rawValue) => {
+                    const numericValue = rawValue.replace(/\D/g, "")
+                    const valueInReais = (parseInt(numericValue || "0", 10) / 100).toFixed(2)
+                    return new Intl.NumberFormat("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    }).format(valueInReais)
+                  }
+                  const handleChange = (e) => {
+                    const rawValue = e.target.value
+                    const formatted = formatCurrency(rawValue)
+                    setDisplayValue(formatted)
+                    const numericValue = Number(
+                      formatted.replace(/\D/g, "")
+                    ) / 100
+
+                    field.onChange(numericValue)
+                  }
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Valor</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="R$ 0,00"
+                          value={displayValue}
+                          onChange={handleChange}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
               />
 
               <FormField

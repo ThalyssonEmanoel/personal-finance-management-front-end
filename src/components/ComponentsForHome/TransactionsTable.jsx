@@ -1,15 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { MoreHorizontal, Search, Trash2, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { MoreHorizontal, Search, Trash2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table"
+} from "@tanstack/react-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,14 +16,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -32,7 +31,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -41,11 +40,21 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import ButtonC from '@/components/Custom-Button'
+} from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import ButtonC from '@/components/Custom-Button';
 import { useTransactionsQuery, useDeleteTransactionMutation } from '../../utils/apiClient.js';
-import ReportDownloadModal from './ReportDonwloadModal'
-const ITEMS_PER_PAGE = 5
+import ReportDownloadModal from './ReportDonwloadModal';
+
+const ITEMS_PER_PAGE = 5;
 
 const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange }) => {
   const [localFilters, setLocalFilters] = useState({
@@ -56,24 +65,17 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
   const [searchTerm, setSearchTerm] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
   const queryFilters = useMemo(() => ({
     ...externalFilters,
     ...localFilters,
   }), [externalFilters, localFilters]);
-  // 2. Chama o hook useTransactionsQuery. A mágica acontece aqui!
+
   const { data, isLoading, isError, error, refetch } = useTransactionsQuery(queryFilters);
   const transactionsData = data?.transactions ?? [];
   const pagination = data?.pagination ?? { total: 0, page: 1 };
   const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteTransactionMutation();
-
-  const filteredTransactions = useMemo(() => {
-    if (!searchTerm) return transactionsData;
-    return transactionsData.filter(transaction =>
-      Object.values(transaction).some(value =>
-        String(value)?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-  }, [transactionsData, searchTerm]);
 
   const handleTypeFilterChange = (value) => {
     setLocalFilters(prev => ({ ...prev, type: value, page: 1 }));
@@ -103,48 +105,43 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
     });
   };
 
-  const totalPages = Math.ceil(pagination.total / ITEMS_PER_PAGE);
-
-
-  const [sorting, setSorting] = useState([])
-  const [columnFilters, setColumnFilters] = useState([])
-  const [columnVisibility, setColumnVisibility] = useState({})
-  const [rowSelection, setRowSelection] = useState({})
-  const [typeFilter, setTypeFilter] = useState('All')
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const lastFiltersRef = React.useRef({})
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setTransactionToDelete(null);
+  };
 
   const getDeleteMessage = (transaction) => {
     if (transaction?.number_installments && transaction.number_installments > 1) {
-      return "Atenção! Caso exclua essa transação não haverá o lançamento automatico da próxima parcela."
+      return "Atenção! Caso exclua essa transação não haverá o lançamento automatico da próxima parcela.";
     }
     if (transaction?.recurring) {
-      return "Atenção! Caso exclua essa transação não haverá mais o lançamento recorrente dela."
+      return "Atenção! Caso exclua essa transação não haverá mais o lançamento recorrente dela.";
     }
-    return "Você tem certeza que deseja apagar essa transação?"
-  }
+    return "Você tem certeza que deseja apagar essa transação?";
+  };
 
-  // Função para cancelar a exclusão
-  const handleCancelDelete = () => {
-    setIsDeleteModalOpen(false)
-    setTransactionToDelete(null)
-  }
+  const filteredTransactions = useMemo(() => {
+    if (!searchTerm) return transactionsData;
+    return transactionsData.filter(transaction =>
+      Object.values(transaction).some(value =>
+        String(value)?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  }, [transactionsData, searchTerm]);
 
-  // Definir as colunas dentro do componente para ter acesso às funções
   const columns = [
     {
       accessorKey: "type",
       header: () => React.createElement("div", null, "Tipo"),
       cell: ({ row }) => {
-        const type = row.original.type
-        const tipoTexto = type === "income" ? "receita" : "despesa"
+        const type = row.original.type;
+        const tipoTexto = type === "income" ? "receita" : "despesa";
         return React.createElement("div", { className: "flex items-center relative -ml-4 -mt-3 -mb-3" },
           React.createElement("div", {
             className: `w-3 h-20 rounded-l-md ${type === "income" ? "bg-green-300" : "bg-red-300"}`
           }),
           React.createElement("span", { className: "pl-4 capitalize" }, tipoTexto)
-        )
+        );
       },
     },
     {
@@ -166,34 +163,34 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
       accessorKey: "release_date",
       header: "Data",
       cell: ({ row }) => {
-        const date = new Date(row.getValue("release_date"))
-        const formatted = date.toLocaleDateString("pt-BR")
-        return React.createElement("div", null, formatted)
+        const date = new Date(row.getValue("release_date"));
+        const formatted = date.toLocaleDateString("pt-BR");
+        return React.createElement("div", null, formatted);
       },
     },
     {
       accessorKey: "value",
       header: "Valor(R$)",
       cell: ({ row }) => {
-        const value = parseFloat(row.original.value_installment || row.original.value)
-        const type = row.original.type
-        const isNegative = type === "expense"
+        const value = parseFloat(row.original.value_installment || row.original.value);
+        const type = row.original.type;
+        const isNegative = type === "expense";
 
         const formatted = new Intl.NumberFormat("pt-BR", {
           style: "currency",
           currency: "BRL",
-        }).format(Math.abs(value))
+        }).format(Math.abs(value));
 
         return React.createElement("div", {
           className: isNegative ? "text-red-600 font-bold" : "text-green-600 font-bold"
-        }, isNegative ? `- ${formatted}` : `+ ${formatted}`)
+        }, isNegative ? `- ${formatted}` : `+ ${formatted}`);
       },
     },
     {
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
-        const transaction = row.original
+        const transaction = row.original;
         return React.createElement(DropdownMenu, null,
           React.createElement(DropdownMenuTrigger, { asChild: true },
             React.createElement(Button, { variant: "ghost", className: "h-8 w-8 p-0" },
@@ -206,93 +203,54 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
             React.createElement(DropdownMenuSeparator),
             React.createElement(DropdownMenuItem, null, "Visualizar"),
             React.createElement(DropdownMenuItem, null, "Editar"),
-            React.createElement(DropdownMenuItem, { 
+            React.createElement(DropdownMenuItem, {
               onClick: () => handleDeleteClick(transaction),
               className: "text-red-600 focus:text-red-600"
             }, "Excluir")
           )
-        )
+        );
       },
     },
-  ]
-
-  // Aplicar filtros quando eles mudarem
-  React.useEffect(() => {
-    console.log('TransactionsTable - Aplicando filtros:', externalFilters, 'typeFilter:', typeFilter)
-    const finalFilters = {
-      ...externalFilters,
-      type: typeFilter !== 'All' ? typeFilter : undefined,
-      limit: ITEMS_PER_PAGE,
-      page: currentPage
-    }
-
-    // Evita chamadas desnecessárias comparando se realmente mudou algo
-    const filtersChanged = JSON.stringify(finalFilters) !== JSON.stringify(lastFiltersRef.current)
-    if (filtersChanged) {
-      console.log('TransactionsTable - Filtros mudaram, fazendo nova busca com:', finalFilters)
-      lastFiltersRef.current = finalFilters
-      refetch(finalFilters)
-    }
-  }, [externalFilters, typeFilter, currentPage])
-
-  const handleSearch = () => {
-    console.log('Busca aplicada:', searchTerm)
-  }
-
-  // Funções de navegação da paginação
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
-    }
-  }
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
-    }
-  }
-
-  // Gerar números das páginas para exibir
-  const getVisiblePages = () => {
-    const visiblePages = []
-    const maxVisiblePages = 3
-
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        visiblePages.push(i)
-      }
-    } else {
-      if (currentPage <= 2) {
-        visiblePages.push(1, 2, 3)
-      } else if (currentPage >= totalPages - 1) {
-        visiblePages.push(totalPages - 2, totalPages - 1, totalPages)
-      } else {
-        visiblePages.push(currentPage - 1, currentPage, currentPage + 1)
-      }
-    }
-
-    return visiblePages
-  }
+  ];
 
   const table = useReactTable({
     data: filteredTransactions,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+    manualPagination: true,
+    pageCount: pagination.total_pages,
     state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
+      pagination: {
+        pageIndex: pagination.page - 1,
+        pageSize: ITEMS_PER_PAGE,
+      },
     },
   });
 
-  const success = !error && filteredTransactions.length > 0
+  const totalPages = Math.ceil(pagination.total / ITEMS_PER_PAGE);
+  const currentPage = localFilters.page;
+
+  const getVisiblePages = () => {
+    const visiblePages = [];
+    const maxVisiblePages = 3;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        visiblePages.push(i);
+      }
+    } else {
+      if (currentPage <= 2) {
+        visiblePages.push(1, 2, 3);
+      } else if (currentPage >= totalPages - 1) {
+        visiblePages.push(totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        visiblePages.push(currentPage - 1, currentPage, currentPage + 1);
+      }
+    }
+    return visiblePages;
+  };
 
   return (
     <div>
@@ -300,7 +258,7 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
         <div className="flex gap-6">
           <div>
             <label className="mb-2 text-base font-medium text-gray-700">Tipo de transação</label>
-            <Select value={typeFilter} onValueChange={handleTypeFilterChange}>
+            <Select value={localFilters.type} onValueChange={handleTypeFilterChange}>
               <SelectTrigger className="w-56 h-10 border-2 border-neutral-300 rounded-sm">
                 <SelectValue placeholder="Receita e despesa" />
               </SelectTrigger>
@@ -315,7 +273,7 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
             </Select>
           </div>
           <div className='mt-6'>
-            <ButtonC texto="Buscar" largura="120px" altura="40px" type="button" onClick={handleSearch} />
+            <ButtonC texto="Buscar" largura="120px" altura="40px" type="button" onClick={() => refetch()} />
           </div>
         </div>
         <div className='mt-6'>
@@ -343,15 +301,15 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
           <div className="overflow-hidden rounded-md">
             <Table>
               <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) =>
+                {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) =>
+                    {headerGroup.headers.map((header) => (
                       <TableHead key={header.id}>
                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                       </TableHead>
-                    )}
+                    ))}
                   </TableRow>
-                )}
+                ))}
               </TableHeader>
               <TableBody>
                 {isLoading ? (
@@ -360,31 +318,16 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
                       Carregando transações...
                     </TableCell>
                   </TableRow>
-                ) : error ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center text-red-600">
-                       Nenhum resultado encontrado.
-                    </TableCell>
-                  </TableRow>
-                ) : table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row, index) =>
-                    <TableRow
-                      key={row.id}
-                      style={{ backgroundColor: "rgb(250, 249, 244)" }}
-                    >
-                      {row.getVisibleCells().map((cell) =>
+                ) : transactionsData.length > 0 ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id} style={{ backgroundColor: "rgb(250, 249, 244)" }}>
+                      {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
-                      )}
+                      ))}
                     </TableRow>
-                  )
-                ) : isError ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center text-red-600">
-                      Nenhum resultado encontrado.{error}
-                    </TableCell>
-                  </TableRow>
+                  ))
                 ) : (
                   <TableRow>
                     <TableCell colSpan={columns.length} className="h-24 text-center">
@@ -398,12 +341,51 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
         </div>
       </div>
       
-      <ReportDownloadModal 
-        isOpen={isReportModalOpen} 
-        onClose={() => setIsReportModalOpen(false)} 
+      {totalPages > 1 && (
+        <div className="mt-6 flex justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => goToPage(currentPage - 1)}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+              
+              {getVisiblePages().map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    onClick={() => goToPage(page)}
+                    isActive={currentPage === page}
+                    className="cursor-pointer"
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              
+              {totalPages > 3 && currentPage < totalPages - 1 && (
+                <PaginationItem>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              )}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => goToPage(currentPage + 1)}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+
+      <ReportDownloadModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
       />
 
-      {/* Modal de confirmação de exclusão */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <DialogContent className="sm:max-w-md" showCloseButton={false}>
           <div className="flex justify-end">
@@ -428,7 +410,7 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
               </DialogTitle>
             </DialogHeader>
 
-            <p className=" mb-6 text-sm leading-relaxed">
+            <p className="mb-6 text-sm leading-relaxed">
               {transactionToDelete && getDeleteMessage(transactionToDelete)}
             </p>
 
@@ -454,7 +436,7 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
         </DialogContent>
       </Dialog>
     </div>
-  )
-}
+  );
+};
 
 export default TransactionsTable;

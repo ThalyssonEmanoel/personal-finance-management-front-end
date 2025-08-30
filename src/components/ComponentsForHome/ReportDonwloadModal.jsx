@@ -65,8 +65,6 @@ export function ReportDownloadModal({ isOpen, onClose }) {
       return;
     }
 
-    setIsLoading(true);
-
     downloadReport({ startDate, endDate, type, accountId }, {
       onSuccess: (blob) => {
         // Lógica para criar o link e iniciar o download
@@ -223,12 +221,12 @@ export function ReportDownloadModal({ isOpen, onClose }) {
                 className="bg-gray-300 hover:bg-gray-400 text-gray-700"
               />
               <ButtonC
-                texto={isLoading ? "Baixando..." : "Baixar Extrato"}
+                texto={isPending ? "Baixando..." : "Baixar Extrato"}
                 largura="50%"
                 altura="40px"
                 type="button"
                 onClick={handleDownload}
-                disabled={isLoading}
+                disabled={isPending}
               />
             </CardFooter>
           </Card>
