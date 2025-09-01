@@ -11,10 +11,6 @@ const useApi = () => {
   return { getUserInfo, isAuthenticated, authenticatedFetch, enabled };
 };
 
-/**
- * @hook useAccounts
- * Busca as contas do usuário usando TanStack Query.
- */
 export function useAccountsQuery() {
   const { authenticatedFetch, getUserInfo, enabled } = useApi();
 
@@ -40,15 +36,10 @@ export function useAccountsQuery() {
   });
 }
 
-/**
- * @hook useTransactions
- * Busca transações paginadas e filtradas.
- */
 export function useTransactionsQuery(filters) {
   const { authenticatedFetch, getUserInfo, enabled } = useApi();
 
   return useQuery({
-    // A queryKey agora inclui os filtros. Se os filtros mudarem,
     // o TanStack Query automaticamente fará uma nova busca.
     queryKey: ['transactions', filters],
     queryFn: async ({ queryKey }) => {
@@ -59,7 +50,8 @@ export function useTransactionsQuery(filters) {
       if (currentFilters.type && currentFilters.type !== 'All') queryParams.append('type', currentFilters.type);
       if (currentFilters.limit) queryParams.append('limit', currentFilters.limit.toString());
       if (currentFilters.page) queryParams.append('page', currentFilters.page.toString());
-      // Adicione outros filtros aqui (accountId, release_date, etc.)
+      if (currentFilters.accountId && currentFilters.accountId !== 'All') queryParams.append('accountId', currentFilters.accountId);
+      if (currentFilters.release_date) queryParams.append('release_date', currentFilters.release_date);
 
       const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParams.toString()}`;
       const response = await authenticatedFetch(url);
@@ -80,16 +72,11 @@ export function useTransactionsQuery(filters) {
         totalExpense: data.data?.totalExpense || 0,
       };
     },
-    // Mantém os dados da página anterior visíveis enquanto a nova carrega
     placeholderData: (previousData) => previousData,
-    enabled: enabled && !!filters, // Só executa se tiver filtros
+    enabled: enabled,
   });
 }
 
-/**
- * @hook useDeleteTransactionMutation
- * Deleta uma transação usando useMutation.
- */
 export function useDeleteTransactionMutation() {
   const { authenticatedFetch, getUserInfo } = useApi();
   const queryClient = useQueryClient();
@@ -116,10 +103,7 @@ export function useDeleteTransactionMutation() {
   });
 }
 
-/**
- * @hook useTransactionCategoriesQuery
- * Busca as categorias de transações do usuário.
- */
+
 export function useTransactionCategoriesQuery() {
   const { authenticatedFetch, getUserInfo, enabled, isAuthenticated } = useApi();
   const defaultCategories = React.useMemo(() => [
@@ -187,10 +171,6 @@ export function useTransactionCategoriesQuery() {
   });
 }
 
-/**
- * @hook useCreateTransactionMutation
- * Cria uma nova transação.
- */
 export function useCreateTransactionMutation() {
   const { authenticatedFetch, getUserInfo } = useApi();
   const queryClient = useQueryClient();
@@ -253,5 +233,60 @@ export function useDownloadReportMutation() {
 
       return response.blob();
     },
+  });
+}
+
+export function useUpdateTransactionMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ transactionId, transactionData }) => {
+      console.log('Update mutation called with:', { transactionId, transactionData });
+      
+      const userInfo = getUserInfo();
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions/{id}?id=${transactionId}&userId=${userInfo.id}`;
+      
+      console.log('Making PATCH request to:', url);
+      console.log('Request body:', JSON.stringify(transactionData));
+      
+      const response = await authenticatedFetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transactionData),
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
+      if (!response.ok) {
+        console.error('Response not ok. Status:', response.status, 'StatusText:', response.statusText);
+        const responseText = await response.text();
+        console.error('Response text:', responseText);
+        
+        let errorData = {};
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Failed to parse error response as JSON:', e);
+          errorData = { message: `HTTP ${response.status}: ${response.statusText}` };
+        }
+        
+        console.error('Update failed:', errorData);
+        throw new Error(errorData.message || `Erro ao atualizar transação (HTTP ${response.status})`);
+      }
+      
+      const result = await response.json();
+      console.log('Update successful:', result);
+      return result;
+    },
+    onSuccess: (data) => {
+      console.log('Mutation onSuccess called with:', data);
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+    onError: (error) => {
+      console.error('Mutation onError called with:', error);
+    }
   });
 }

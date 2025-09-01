@@ -82,7 +82,7 @@ const FiltersSection = ({ onFiltersChange }) => {
         </div>
         <div className="flex flex-col">
           <Label htmlFor="date" className="mb-2 text-base font-medium text-gray-700">
-            Mês das transações
+            Data das transações
           </Label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>

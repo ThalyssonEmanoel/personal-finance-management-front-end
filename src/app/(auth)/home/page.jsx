@@ -10,7 +10,10 @@ import { useAccountsQuery, useTransactionsQuery } from '@/utils/apiClient';
 
 export default function HomePage() {
   const { isLoading: isAuthLoading } = useAuth();
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState({
+    page: 1,
+    limit: 5
+  });
 
   const { data: accountsData, isLoading: isAccountsLoading } = useAccountsQuery();
   const { data: transactionsData, isLoading: isTransactionsLoading } = useTransactionsQuery(filters);
@@ -18,6 +21,8 @@ export default function HomePage() {
   const totalBalance = accountsData?.totalBalance ?? 0;
   const accounts = accountsData?.accounts ?? [];
   const totalIncome = transactionsData?.totalIncome ?? 0;
+  console.log("Total Income:", totalIncome);
+
   const totalExpense = transactionsData?.totalExpense ?? 0;
 
   const getCurrentBalance = () => {
@@ -29,7 +34,11 @@ export default function HomePage() {
   };
 
   const handleFiltersChange = (newFilters) => {
-    setFilters(newFilters);
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      ...newFilters,
+      page: 1
+    }));
   };
 
   const formatCurrency = (value) => {

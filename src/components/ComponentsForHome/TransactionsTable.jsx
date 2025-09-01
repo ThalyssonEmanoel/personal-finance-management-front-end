@@ -53,6 +53,7 @@ import {
 import ButtonC from '@/components/Custom-Button';
 import { useTransactionsQuery, useDeleteTransactionMutation } from '../../utils/apiClient.js';
 import ReportDownloadModal from './ReportDonwloadModal';
+import UpdateTransactionModal from './UpdateTransactionModal';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -66,13 +67,15 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [transactionToEdit, setTransactionToEdit] = useState(null);
 
   const queryFilters = useMemo(() => ({
     ...externalFilters,
     ...localFilters,
   }), [externalFilters, localFilters]);
 
-  const { data, isLoading, isError, error, refetch } = useTransactionsQuery(queryFilters);
+  const { data, isLoading, isError, error } = useTransactionsQuery(queryFilters);
   const transactionsData = data?.transactions ?? [];
   const pagination = data?.pagination ?? { total: 0, page: 1 };
   const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteTransactionMutation();
@@ -88,6 +91,16 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
   const handleDeleteClick = (transaction) => {
     setTransactionToDelete(transaction);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleEditClick = (transaction) => {
+    setTransactionToEdit(transaction);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setTransactionToEdit(null);
   };
 
   const handleConfirmDelete = () => {
@@ -164,6 +177,8 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
       header: "Data",
       cell: ({ row }) => {
         const date = new Date(row.getValue("release_date"));
+        //Somar 1 dia
+        date.setDate(date.getDate() + 1);
         const formatted = date.toLocaleDateString("pt-BR");
         return React.createElement("div", null, formatted);
       },
@@ -202,7 +217,9 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
             React.createElement(DropdownMenuLabel, null, "Ações"),
             React.createElement(DropdownMenuSeparator),
             React.createElement(DropdownMenuItem, null, "Visualizar"),
-            React.createElement(DropdownMenuItem, null, "Editar"),
+            React.createElement(DropdownMenuItem, {
+              onClick: () => handleEditClick(transaction)
+            }, "Editar"),
             React.createElement(DropdownMenuItem, {
               onClick: () => handleDeleteClick(transaction),
               className: "text-red-600 focus:text-red-600"
@@ -271,9 +288,6 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
                 </SelectGroup>
               </SelectContent>
             </Select>
-          </div>
-          <div className='mt-6'>
-            <ButtonC texto="Buscar" largura="120px" altura="40px" type="button" onClick={() => refetch()} />
           </div>
         </div>
         <div className='mt-6'>
@@ -435,6 +449,12 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
           </div>
         </DialogContent>
       </Dialog>
+
+      <UpdateTransactionModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        transaction={transactionToEdit}
+      />
     </div>
   );
 };
