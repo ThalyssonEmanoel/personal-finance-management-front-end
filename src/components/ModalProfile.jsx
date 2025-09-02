@@ -27,6 +27,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAuth } from "@/hooks/useAuth"
 import { useSession } from "next-auth/react"
+import { toast } from "sonner"
 
 export function ModalProfile({ isOpen, onClose }) {
   const [tab, setTab] = useState('profile');
@@ -63,8 +64,8 @@ export function ModalProfile({ isOpen, onClose }) {
 
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
-    const fileName = avatarPath.replace('src/uploads/', '');
-    const baseUrl = `https://personal-finance-api.app.fslab.dev/uploads/${fileName}`;
+    const fileName = avatarPath.replace(/src[\\/]uploads[\\/]|src[\\/]seed[\\/]images[\\/]/g, '');
+    const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/uploads/${fileName}`;
     // Adiciona timestamp para evitar cache de imagem
     return baseUrl;
   };
@@ -109,7 +110,10 @@ export function ModalProfile({ isOpen, onClose }) {
       console.log('Resposta do backend:', responseData);
 
       if (responseData && !responseData.error) {
-        setProfileSuccess('Perfil atualizado com sucesso!');
+        // Mostra toast de sucesso
+        toast.success("Perfil atualizado com sucesso!", {
+          description: "Suas informações foram atualizadas"
+        });
 
         // Atualiza as informações do usuário na sessão
         const updatedUserInfo = {
@@ -146,14 +150,13 @@ export function ModalProfile({ isOpen, onClose }) {
           document.getElementById("profile-file-name").textContent = "Nenhum arquivo escolhido";
           profileForm.setValue('avatar', null);
         }
-
-        setTimeout(() => {
-          setProfileSuccess('');
-        }, 3000);
       }
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
-      setProfileError(error.message || 'Erro ao atualizar perfil. Tente novamente.');
+      // Mostra toast de erro
+      toast.error("Erro ao atualizar perfil", {
+        description: error.message || "Ocorreu um erro inesperado. Tente novamente."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -182,16 +185,19 @@ export function ModalProfile({ isOpen, onClose }) {
       }
 
       if (responseData && !responseData.error) {
-        setPasswordSuccess('Senha alterada com sucesso!');
+        // Mostra toast de sucesso
+        toast.success("Senha alterada com sucesso!", {
+          description: "Sua senha foi atualizada com segurança"
+        });
+        
         passwordForm.reset();
-
-        setTimeout(() => {
-          setPasswordSuccess('');
-        }, 3000);
       }
     } catch (error) {
       console.error('Erro ao alterar senha:', error);
-      setPasswordError(error.message || 'Erro ao alterar senha. Tente novamente.');
+      // Mostra toast de erro
+      toast.error("Erro ao alterar senha", {
+        description: error.message || "Ocorreu um erro inesperado. Tente novamente."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -228,17 +234,6 @@ export function ModalProfile({ isOpen, onClose }) {
                 <Form {...profileForm}>
                   <form onSubmit={profileForm.handleSubmit(handleProfileSubmit)}>
                     <CardContent className="grid gap-6">
-                      {profileError && (
-                        <div className="text-red-500 text-sm text-center">
-                          {profileError}
-                        </div>
-                      )}
-                      {profileSuccess && (
-                        <div className="text-green-500 text-sm text-center">
-                          {profileSuccess}
-                        </div>
-                      )}
-
                       {user?.avatar && (
                         <div className="flex flex-col items-center gap-2">
                           <Label>Foto atual</Label>
@@ -291,12 +286,12 @@ export function ModalProfile({ isOpen, onClose }) {
                         render={({ field: { onChange, value, ...field } }) => (
                           <FormItem>
                             <FormLabel>Nova foto de perfil (opcional, máximo 2MB)</FormLabel>
-                            <div className="grid gap-3 w-44">
+                            <div className="grid gap-6 w-44">
                               <FormControl>
                                 <input
                                   id="profile-user-image"
                                   type="file"
-                                  accept="image/*"
+                                  accept=""
                                   className="hidden rounded-sm"
                                   onChange={(e) => {
                                     const file = e.target.files[0];
@@ -308,11 +303,11 @@ export function ModalProfile({ isOpen, onClose }) {
                               </FormControl>
                               <label
                                 htmlFor="profile-user-image"
-                                className="text-center  border-2 rounded-sm text-black text-sm hover:text-white hover:shadow-md hover:bg-brown duration-200 cursor-pointer"
+                                className="flex justify-center items-center text-center md:text-center border-2 rounded-sm text-black text-sm hover:text-white hover:shadow-md hover:bg-brown duration-200 cursor-pointer h-8"
                               >
                                 Selecionar nova imagem
                               </label>
-                              <span id="profile-file-name" className="text-sm text-gray-600">
+                              <span id="profile-file-name" className="text-sm text-gray-600 -mt-2 mb-6 ml-0.5">
                                 Nenhum arquivo escolhido
                               </span>
                             </div>
@@ -339,16 +334,6 @@ export function ModalProfile({ isOpen, onClose }) {
                 <Form {...passwordForm}>
                   <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)}>
                     <CardContent className="grid gap-6">
-                      {passwordError && (
-                        <div className="text-red-500 text-sm text-center">
-                          {passwordError}
-                        </div>
-                      )}
-                      {passwordSuccess && (
-                        <div className="text-green-500 text-sm text-center">
-                          {passwordSuccess}
-                        </div>
-                      )}
                       <FormField
                         control={passwordForm.control}
                         name="currentPassword"
@@ -383,7 +368,6 @@ export function ModalProfile({ isOpen, onClose }) {
                               <Input
                                 type={showNewPassword ? "text" : "password"}
                                 className="pr-10"
-                                placeholder="Mínimo 8 caracteres com maiúscula, minúscula, número e caractere especial"
                                 {...field}
                               />
                             </FormControl>
@@ -418,12 +402,12 @@ export function ModalProfile({ isOpen, onClose }) {
                             >
                               {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
-                            <FormMessage />
+                            <FormMessage className="-mt-4" />
                           </FormItem>
                         )}
                       />
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="mt-6">
                       <ButtonC
                         texto={isLoading ? "Alterando senha..." : "Alterar senha"}
                         largura="334.4px"

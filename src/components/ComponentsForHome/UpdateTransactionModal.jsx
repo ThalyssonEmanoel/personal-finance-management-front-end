@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CalendarIcon, ChevronsUpDown } from "lucide-react";
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -61,6 +62,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
 
   const form = useForm({
     resolver: zodResolver(updateTransactionSchema),
+    mode: 'onSubmit',
     defaultValues: {
       type: '',
       name: '',
@@ -86,6 +88,9 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
         paymentMethodId: transaction.paymentMethodId,
         release_date: new Date(transaction.release_date).toISOString().split('T')[0],
         description: transaction.description || '', 
+        // Convert null values to undefined for optional fields
+        number_installments: transaction.number_installments ?? undefined,
+        current_installment: transaction.current_installment ?? undefined,
       };
       console.log('Form data to set:', formData);
       form.reset(formData);
@@ -132,38 +137,80 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
 
   const handleSubmit = async (data) => {
     console.log('handleSubmit called with data:', data);
+    console.log('Form errors:', form.formState.errors);
+    console.log('Form is valid:', form.formState.isValid);
     console.log('transaction:', transaction);
     
     if (!transaction) {
       console.error('No transaction provided');
+      toast.error("Erro interno", {
+        description: "Transação não encontrada"
+      });
       return;
     }
 
     try {
       const requestData = {
-        ...data,
+        type: data.type,
+        name: data.name,
+        category: data.category,
         value: parseFloat(data.value),
+        release_date: data.release_date,
+        description: data.description && data.description.trim() !== '' ? data.description.trim() : undefined,
+        recurring: Boolean(data.recurring),
         accountId: parseInt(data.accountId),
         paymentMethodId: data.paymentMethodId ? parseInt(data.paymentMethodId) : undefined,
-        description: data.description && data.description.trim() !== '' ? data.description.trim() : undefined,
       };
+
+      // Adicionar campos de parcelas se existirem
+      if (data.number_installments && data.number_installments > 0) {
+        requestData.number_installments = parseInt(data.number_installments);
+      }
+      
+      if (data.current_installment && data.current_installment > 0) {
+        requestData.current_installment = parseInt(data.current_installment);
+      }
 
       console.log('Sending update request with data:', requestData);
 
       updateTransaction({ transactionId: transaction.id, transactionData: requestData }, {
         onSuccess: (response) => {
           console.log('Update successful:', response);
+          
+          // Mostra toast de sucesso
+          toast.success("Transação atualizada com sucesso!", {
+            description: `${data.type === 'income' ? 'Receita' : 'Despesa'} de ${new Intl.NumberFormat("pt-BR", {
+              style: "currency",
+              currency: "BRL",
+            }).format(data.value)} atualizada`
+          });
+          
           setTimeout(() => {
             onClose();
           }, 1000);
         },
         onError: (error) => {
           console.error('Update failed:', error);
+          
+          // Mostra toast de erro
+          toast.error("Erro ao atualizar transação", {
+            description: error.message || "Ocorreu um erro inesperado. Tente novamente."
+          });
         }
       });
     } catch (error) {
       console.error('Error in handleSubmit:', error);
+      toast.error("Erro ao atualizar transação", {
+        description: "Ocorreu um erro inesperado. Tente novamente."
+      });
     }
+  };
+
+  const handleInvalidSubmit = (errors) => {
+    console.log('Form validation errors:', errors);
+    toast.error("Erro de validação", {
+      description: "Verifique os campos obrigatórios"
+    });
   };
 
   return (
@@ -180,7 +227,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
           </DialogHeader>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleSubmit, handleInvalidSubmit)} className="space-y-6">
             <FormField
                 control={form.control}
                 name="type"
@@ -376,31 +423,6 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                 )}
               />
               
-              {transaction?.recurring && (
-                <FormField
-                  control={form.control}
-                  name="recurring"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Transação Recorrente
-                        </FormLabel>
-                        <p className="text-sm text-muted-foreground">
-                          Desmarque para tornar esta transação não recorrente
-                        </p>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
 
               <FormField
                 control={form.control}
@@ -478,8 +500,13 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                             min="2"
                             max="60"
                             placeholder="Ex: 12"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            value={field.value || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === '' ? undefined : parseInt(value));
+                            }}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
                           />
                         </FormControl>
                         <FormMessage />
@@ -498,8 +525,13 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                             min="1"
                             max={transaction.number_installments}
                             placeholder="Ex: 1"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            value={field.value || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === '' ? undefined : parseInt(value));
+                            }}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
                           />
                         </FormControl>
                         <FormMessage />
@@ -509,17 +541,29 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                 </>
               )}
 
-              {isError && (
-                <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md border border-red-200">
-                  {error.message}
-                </div>
-              )}
-
-              {isSuccess && (
-                <div className="text-green-600 text-sm bg-green-50 p-3 rounded-md border border-green-200">
-                  Transação atualizada com sucesso!
-                </div>
-              )}
+              <FormField
+                control={form.control}
+                name="recurring"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Transação Recorrente
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        {transaction?.recurring ? "Desmarque para tornar esta transação não recorrente" : "Marque para tornar esta transação recorrente"}
+                      </p>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="flex pt-4 flex-row justify-between">
                 <ButtonC

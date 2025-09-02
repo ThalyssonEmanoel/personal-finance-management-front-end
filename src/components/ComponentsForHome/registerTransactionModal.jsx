@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CalendarIcon, ChevronsUpDown } from "lucide-react"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -138,13 +139,22 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
     }
     createTransaction(requestData, {
       onSuccess: () => {
-        // O onSuccess da mutation cuida da invalidação.
-        // Aqui, cuidamos apenas do estado da UI do modal.
+        toast.success("Transação cadastrada com sucesso!", {
+          description: `${data.type === 'income' ? 'Receita' : 'Despesa'} de ${new Intl.NumberFormat("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          }).format(data.value)} adicionada`
+        });
         form.reset();
         setTimeout(() => {
           onClose();
-        }, 1000); // Fecha o modal após 0.5s
+        }, 250); // Fecha o modal após 0.25s
       },
+      onError: (error) => {
+        toast.error("Erro ao cadastrar transação", {
+          description: error.message || "Ocorreu um erro inesperado. Tente novamente."
+        });
+      }
     });
   };
 
@@ -469,19 +479,6 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
                   </div>
                 </div>
               </div>
-
-              {/*Usar o componente toast do shadcn mais para frente*/}
-              {isError && (
-                <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md border border-red-200">
-                  {error.message}
-                </div>
-              )}
-
-              {isSuccess && (
-                <div className="text-green-600 text-sm bg-green-50 p-3 rounded-md border border-green-200">
-                  Transação cadastrada com sucesso!
-                </div>
-              )}
 
               <div className="flex pt-4 flex-row justify-between">
                 <ButtonC

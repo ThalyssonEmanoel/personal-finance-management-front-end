@@ -4,7 +4,6 @@ import { useAuth } from '../hooks/useAuth.js';
 import React from 'react';
 
 
-// Função auxiliar para evitar repetição
 const useApi = () => {
   const { getUserInfo, isAuthenticated, authenticatedFetch, status } = useAuth();
   const enabled = status === 'authenticated' && !!getUserInfo()?.id;
