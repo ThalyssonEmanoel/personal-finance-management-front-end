@@ -161,7 +161,18 @@ const ChartsSection = ({ filters }) => {
           <div className="flex justify-between items-start pr-6">
             <CardHeader className="items-center pb-0 flex-grow">
               <CardTitle>Despesas</CardTitle>
-              <CardDescription>{filters.release_date ? new Date(filters.release_date).toLocaleString('pt-BR', { month: 'long', year: 'numeric' }) : 'Últimos 30 dias'}</CardDescription>
+              <CardDescription>
+                {filters.release_date ? (() => {
+                  const [year, month, day] = filters.release_date.split('-').map(Number);
+                  const date = new Date(year, month - 1, day); 
+                  
+                  const firstDay = date.toLocaleString('pt-BR', { day: 'numeric' });
+                  const lastDayDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+                  const lastDay = lastDayDate.toLocaleString('pt-BR', { day: 'numeric' });
+                  const monthYear = date.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+                  return `${firstDay} à ${lastDay} de ${monthYear}`;
+                })() : 'Todas as transações existentes'}
+              </CardDescription>
             </CardHeader>
             <div className="flex flex-col min-w-[200px]">
               <label className="mb-2 text-sm font-medium text-gray-700">Organizar gráficos por:</label>
@@ -268,7 +279,18 @@ const ChartsSection = ({ filters }) => {
           <div className="flex justify-between items-start pr-6">
             <CardHeader className="items-center pb-0 flex-grow">
               <CardTitle>Receitas</CardTitle>
-              <CardDescription>{filters.release_date ? new Date(filters.release_date).toLocaleString('pt-BR', { month: 'long', year: 'numeric' }) : 'Últimos 30 dias'}</CardDescription>
+              <CardDescription>
+                {filters.release_date ? (() => {
+                  const [year, month, day] = filters.release_date.split('-').map(Number);
+                  const date = new Date(year, month - 1, day); 
+                  
+                  const firstDay = date.toLocaleString('pt-BR', { day: 'numeric' });
+                  const lastDayDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+                  const lastDay = lastDayDate.toLocaleString('pt-BR', { day: 'numeric' });
+                  const monthYear = date.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+                  return `${firstDay} à ${lastDay} de ${monthYear}`;
+                })() : 'Todas as transações existentes'}
+              </CardDescription>
             </CardHeader>
             <div className="flex flex-col min-w-[200px]">
               <label className="mb-2 text-sm font-medium text-gray-700">Organizar gráficos por:</label>
