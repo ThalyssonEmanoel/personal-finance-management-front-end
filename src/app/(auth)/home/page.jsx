@@ -14,17 +14,12 @@ export default function HomePage() {
     page: 1,
     limit: 5
   });
-
   const { data: accountsData, isLoading: isAccountsLoading } = useAccountsQuery();
   const { data: transactionsData, isLoading: isTransactionsLoading } = useTransactionsQuery(filters);
-
   const totalBalance = accountsData?.totalBalance ?? 0;
   const accounts = accountsData?.accounts ?? [];
   const totalIncome = transactionsData?.totalIncome ?? 0;
-  console.log("Total Income:", totalIncome);
-
   const totalExpense = transactionsData?.totalExpense ?? 0;
-
   const getCurrentBalance = () => {
     if (filters.accountId && filters.accountId !== "All") {
       const selectedAccount = accounts.find(acc => acc.id.toString() === filters.accountId.toString());

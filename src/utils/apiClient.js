@@ -102,7 +102,6 @@ export function useDeleteTransactionMutation() {
   });
 }
 
-
 export function useTransactionCategoriesQuery() {
   const { authenticatedFetch, getUserInfo, enabled, isAuthenticated } = useApi();
   const defaultCategories = React.useMemo(() => [
@@ -126,12 +125,23 @@ export function useTransactionCategoriesQuery() {
       const userInfo = getUserInfo();
       const queryParams = new URLSearchParams({ userId: userInfo.id.toString() });
       const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParams.toString()}`;
-      const response = await authenticatedFetch(url, { method: 'GET' });
+      const PreResponse = await authenticatedFetch(url, { method: 'GET' });
+      const data = await PreResponse.json();
+      console.log("Total e limite", data.total, data.limite);
+
+      const queryParamsFinal = new URLSearchParams({ userId: userInfo.id.toString(), limit: data.total, page: 1 });
+      const urlFinal = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParamsFinal.toString()}`;
+      console.log("URL Final", urlFinal);
+
+      const response = await authenticatedFetch(urlFinal, { method: 'GET' });
+      const dataFinal = await response.json();
+
+      const transactionsData = (dataFinal.data && dataFinal.data.transactions) || [];
+
+      console.log("Transações", transactionsData);
       if (!response.ok) {
         return defaultCategories;
       }
-      const data = await response.json();
-      const transactionsData = (data.data && data.data.transactions) || [];
 
       const existingCategories = [...new Set(
         transactionsData
@@ -242,27 +252,27 @@ export function useUpdateTransactionMutation() {
   return useMutation({
     mutationFn: async ({ transactionId, transactionData }) => {
       console.log('Update mutation called with:', { transactionId, transactionData });
-      
+
       const userInfo = getUserInfo();
       const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions/{id}?id=${transactionId}&userId=${userInfo.id}`;
-      
+
       console.log('Making PATCH request to:', url);
       console.log('Request body:', JSON.stringify(transactionData));
-      
+
       const response = await authenticatedFetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(transactionData),
       });
-      
+
       console.log('Response status:', response.status);
       console.log('Response headers:', response.headers);
-      
+
       if (!response.ok) {
         console.error('Response not ok. Status:', response.status, 'StatusText:', response.statusText);
         const responseText = await response.text();
         console.error('Response text:', responseText);
-        
+
         let errorData = {};
         try {
           errorData = JSON.parse(responseText);
@@ -270,11 +280,11 @@ export function useUpdateTransactionMutation() {
           console.error('Failed to parse error response as JSON:', e);
           errorData = { message: `HTTP ${response.status}: ${response.statusText}` };
         }
-        
+
         console.error('Update failed:', errorData);
         throw new Error(errorData.message || `Erro ao atualizar transação (HTTP ${response.status})`);
       }
-      
+
       const result = await response.json();
       console.log('Update successful:', result);
       return result;
@@ -287,5 +297,54 @@ export function useUpdateTransactionMutation() {
     onError: (error) => {
       console.error('Mutation onError called with:', error);
     }
+  });
+}
+
+export function useTransactionsChartQuery(filters) {
+  const { authenticatedFetch, getUserInfo, enabled } = useApi();
+
+  return useQuery({
+    // o TanStack Query automaticamente fará uma nova busca.
+    queryKey: ['transactions', filters],
+    queryFn: async ({ queryKey }) => {
+      const [_key, currentFilters] = queryKey;
+      const userInfo = getUserInfo();
+
+      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() });
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParams.toString()}`;
+      const PreResponse = await authenticatedFetch(url, { method: 'GET' });
+      const data = await PreResponse.json();
+      console.log("Total e limite", data.total, data.limite);
+
+      const queryParamsFinal = new URLSearchParams({ userId: userInfo.id.toString(), limit: data.total, page: 1 });
+
+      console.log("Query params finais:", queryParamsFinal.toString());
+
+      if (currentFilters.type && currentFilters.type !== 'All') queryParamsFinal.append('type', currentFilters.type);
+      if (currentFilters.accountId && currentFilters.accountId !== 'All') queryParamsFinal.append('accountId', currentFilters.accountId);
+      if (currentFilters.release_date) queryParamsFinal.append('release_date', currentFilters.release_date);
+
+      const urlFinal = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParamsFinal.toString()}`;
+      console.log("URL Final charts", urlFinal);
+      const responseFinal = await authenticatedFetch(urlFinal);
+      if (!responseFinal.ok) throw new Error('Erro ao buscar transações');
+      const dataFinal = await responseFinal.json();
+      if (dataFinal.error) throw new Error(dataFinal.message || 'Erro na resposta da API');
+
+
+      // Estrutura o retorno para ser fácil de usar no componente
+      return {
+        transactions: dataFinal.data?.transactions || [],
+        pagination: {
+          page: dataFinal.page || currentFilters.page || 1,
+          total: dataFinal.total || 0,
+          limit: dataFinal.limite || dataFinal.limit || currentFilters.limit || 5,
+        },
+        totalIncome: dataFinal.data?.totalIncome || 0,
+        totalExpense: dataFinal.data?.totalExpense || 0,
+      };
+    },
+    placeholderData: (previousData) => previousData,
+    enabled: enabled,
   });
 }
