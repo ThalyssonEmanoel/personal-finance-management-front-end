@@ -1,188 +1,110 @@
 'use client'
-import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { useAuth } from '../hooks/useAuth.js'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../hooks/useAuth.js';
+import React from 'react';
 
-/**
- * @useAccounts Hook para buscar contas do usuário
- */
-export function useAccounts() {
-  const [accounts, setAccounts] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [totalBalance, setTotalBalance] = useState(0)
-  const { getUserInfo, isAuthenticated, authenticatedFetch, status } = useAuth()
-  const initialLoadDone = useRef(false)
 
-  const fetchAccounts = useCallback(async () => {
-    if (!isAuthenticated()) {
-      setError('Usuário não autenticado')
-      return
-    }
+const useApi = () => {
+  const { getUserInfo, isAuthenticated, authenticatedFetch, status } = useAuth();
+  const enabled = status === 'authenticated' && !!getUserInfo()?.id;
+  return { getUserInfo, isAuthenticated, authenticatedFetch, enabled };
+};
 
-    const userInfo = getUserInfo()
-    if (!userInfo?.id) {
-      setError('ID do usuário não encontrado')
-      return
-    }
+export function useAccountsQuery() {
+  const { authenticatedFetch, getUserInfo, enabled } = useApi();
 
-    setLoading(true)
-    setError(null)
-
-    try {
+  return useQuery({
+    // 1. queryKey: Chave única para esta busca.
+    queryKey: ['accounts'],
+    // 2. queryFn: A função que busca os dados.
+    queryFn: async () => {
+      const userInfo = getUserInfo();
       const response = await authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/account/${userInfo.id}?userId=${userInfo.id}`,
-        { method: 'GET' }
-      )
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Erro na resposta da API' }))
-        throw new Error(errorData.message || `Erro HTTP ${response.status}`)
-      }
-
-      const data = await response.json()
-      let accountsData = []
-
-      if (data.data && data.data.contas) accountsData = data.data.contas
-      else if (Array.isArray(data)) accountsData = data
-      else if (Array.isArray(data.accounts)) accountsData = data.accounts
-
-      setAccounts(accountsData)
-      setTotalBalance(data.data?.totalBalance || 0)
-    } catch (err) {
-      setError(err.message || 'Erro ao buscar contas')
-      setAccounts([])
-      setTotalBalance(0)
-    } finally {
-      setLoading(false)
-    }
-  }, [getUserInfo, isAuthenticated, authenticatedFetch])
-
-  // Carregar apenas uma vez quando autenticado
-  useEffect(() => {
-    if (status === 'authenticated' && !initialLoadDone.current) {
-      initialLoadDone.current = true
-      fetchAccounts()
-    }
-  }, [status, fetchAccounts])
-
-  return { accounts, loading, error, totalBalance, refetch: fetchAccounts }
+        `${process.env.NEXT_PUBLIC_API_URL}/account/${userInfo.id}?userId=${userInfo.id}`
+      );
+      if (!response.ok) throw new Error('Erro ao buscar contas');
+      const data = await response.json();
+      // Retornamos apenas os dados que o componente precisa
+      return {
+        accounts: data.data?.contas || [],
+        totalBalance: data.data?.totalBalance || 0,
+      };
+    },
+    // 3. enabled: A query só será executada se o usuário estiver autenticado.
+    enabled,
+  });
 }
 
-/**
- * @useTransactions Hook para buscar transações do usuário
- */
-export function useTransactions() {
-  const [transactions, setTransactions] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [pagination, setPagination] = useState({ page: 1, total: 0, limit: 10 })
-  const [totalIncome, setTotalIncome] = useState(0)
-  const [totalExpense, setTotalExpense] = useState(0)
-  const [topIncomes, setTopIncomes] = useState([])
-  const [topExpenses, setTopExpenses] = useState([])
-  const { getUserInfo, isAuthenticated, authenticatedFetch, status } = useAuth()
-  const initialLoadDone = useRef(false)
+export function useTransactionsQuery(filters) {
+  const { authenticatedFetch, getUserInfo, enabled } = useApi();
 
-  const fetchTransactions = useCallback(async (filters = {}) => {
-    if (!isAuthenticated()) {
-      setError('Usuário não autenticado')
-      return
-    }
+  return useQuery({
+    // o TanStack Query automaticamente fará uma nova busca.
+    queryKey: ['transactions', filters],
+    queryFn: async ({ queryKey }) => {
+      const [_key, currentFilters] = queryKey;
+      const userInfo = getUserInfo();
+      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() });
 
-    const userInfo = getUserInfo()
-    if (!userInfo?.id) {
-      setError('ID do usuário não encontrado')
-      return
-    }
-    setLoading(true)
-    setError(null)
+      if (currentFilters.type && currentFilters.type !== 'All') queryParams.append('type', currentFilters.type);
+      if (currentFilters.limit) queryParams.append('limit', currentFilters.limit.toString());
+      if (currentFilters.page) queryParams.append('page', currentFilters.page.toString());
+      if (currentFilters.accountId && currentFilters.accountId !== 'All') queryParams.append('accountId', currentFilters.accountId);
+      if (currentFilters.release_date) queryParams.append('release_date', currentFilters.release_date);
 
-    try {
-      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() })//https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams ajuda a trabalhar com os parâmetros de uma URL(?)
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParams.toString()}`;
+      const response = await authenticatedFetch(url);
+      if (!response.ok) throw new Error('Erro ao buscar transações');
 
-      if (filters.type && filters.type !== 'All') queryParams.append('type', filters.type)
-      if (filters.accountId && filters.accountId !== 'All') queryParams.append('accountId', filters.accountId)
-      if (filters.release_date) queryParams.append('release_date', filters.release_date)
+      const data = await response.json();
+      if (data.error) throw new Error(data.message || 'Erro na resposta da API');
 
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParams.toString()}`
-      // console.log('Fazendo requisição para:', url)
-      // console.log('Filtros aplicados:', filters)
-      const response = await authenticatedFetch(url, { method: 'GET' })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Erro na resposta da API' }))
-        throw new Error(errorData.message || `Erro HTTP ${response.status}`)
-      }
-
-      const data = await response.json()
-
-      if (data.error) throw new Error(data.message || 'Erro na resposta da API')
-
-      console.log('Transações recebidas:', data.data ? data.data.transactions : data);
-
-      const transactionsData = (data.data && data.data.transactions) || []
-      setTransactions(transactionsData)
-      
-      // Extrair totais da resposta da API
-      setTotalIncome(data.data?.totalIncome || 0)
-      setTotalExpense(data.data?.totalExpense || 0)
-
-      const incomeTransactions = transactionsData
-        .filter(t => t.type === 'income')
-        .sort((a, b) => new Date(b.release_date) - new Date(a.release_date))
-        .slice(0, 3)
-        .map(t => t.name)
-      
-      const expenseTransactions = transactionsData
-        .filter(t => t.type === 'expense')
-        .sort((a, b) => new Date(b.release_date) - new Date(a.release_date))
-        .slice(0, 3)
-        .map(t => t.name)
-      
-      setTopIncomes(incomeTransactions)
-      setTopExpenses(expenseTransactions)
-      
-      setPagination({
-        page: data.page || 1,
-        total: data.total || 0,
-        limit: data.limite || data.limit || 10
-      })
-    } catch (err) {
-      setError(err.message || 'Erro ao buscar transações')
-    } finally {
-      setLoading(false)
-    }
-  }, [getUserInfo, isAuthenticated, authenticatedFetch])
-
-  // Carregar apenas uma vez quando autenticado
-  useEffect(() => {
-    if (status === 'authenticated' && !initialLoadDone.current) {
-      initialLoadDone.current = true
-      fetchTransactions()
-    }
-  }, [status, fetchTransactions])
-
-  return { 
-    transactions, 
-    loading, 
-    error, 
-    pagination, 
-    totalIncome, 
-    totalExpense, 
-    topIncomes, 
-    topExpenses, 
-    refetch: fetchTransactions 
-  }
+      // Estrutura o retorno para ser fácil de usar no componente
+      return {
+        transactions: data.data?.transactions || [],
+        pagination: {
+          page: data.page || currentFilters.page || 1,
+          total: data.total || 0,
+          limit: data.limite || data.limit || currentFilters.limit || 5,
+        },
+        totalIncome: data.data?.totalIncome || 0,
+        totalExpense: data.data?.totalExpense || 0,
+      };
+    },
+    placeholderData: (previousData) => previousData,
+    enabled: enabled,
+  });
 }
 
-export function useTransactionCategories() {
-  const [categories, setCategories] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const { getUserInfo, isAuthenticated, authenticatedFetch, status } = useAuth()
-  const initialLoadDone = useRef(false)
+export function useDeleteTransactionMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
 
-  // Categorias estáticas padrão
+  return useMutation({
+    mutationFn: async (transactionId) => {
+      const userInfo = getUserInfo();
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/transactions/{id}?id=${transactionId}&userId=${userInfo.id}`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Erro ao deletar transação');
+      }
+      return response.json();
+    },
+    // onSuccess é o lugar perfeito para invalidar o cache e forçar um refetch.
+    onSuccess: () => {
+      // Invalida todas as queries que começam com ['transactions'].
+      // Isso fará com que a tabela de transações seja atualizada automaticamente.
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    },
+  });
+}
+
+
+export function useTransactionCategoriesQuery() {
+  const { authenticatedFetch, getUserInfo, enabled, isAuthenticated } = useApi();
   const defaultCategories = React.useMemo(() => [
     { value: 'Transporte', label: 'Transporte' },
     { value: 'Moradia', label: 'Moradia' },
@@ -190,135 +112,180 @@ export function useTransactionCategories() {
     { value: 'Educação', label: 'Educação' },
     { value: 'Lazer', label: 'Lazer' },
     { value: 'Vestuário', label: 'Vestuário' },
-    { value: 'investimentos', label: 'Investimentos' },
-    { value: 'outros', label: 'Outros' },
-  ], [])
+    { value: 'Investimentos', label: 'Investimentos' },
+    { value: 'Outros', label: 'Outros' },
+  ], []);
 
-  const fetchCategories = useCallback(async () => {
-    if (!isAuthenticated()) {
-      setError('Usuário não autenticado')
-      setCategories(defaultCategories)
-      return
-    }
-
-    const userInfo = getUserInfo()
-    if (!userInfo?.id) {
-      setError('ID do usuário não encontrado')
-      setCategories(defaultCategories)
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
-    try {
-      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() })
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParams.toString()}`
-
-      const response = await authenticatedFetch(url, { method: 'GET' })
-
-      if (!response.ok) {
-        throw new Error(`Erro HTTP ${response.status}`)
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      if (!isAuthenticated() || !getUserInfo()?.id) {
+        // Usuário não autenticado, retorna apenas as categorias padrão
+        return defaultCategories;
       }
+      const userInfo = getUserInfo();
+      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() });
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParams.toString()}`;
+      const response = await authenticatedFetch(url, { method: 'GET' });
+      if (!response.ok) {
+        return defaultCategories;
+      }
+      const data = await response.json();
+      const transactionsData = (data.data && data.data.transactions) || [];
 
-      const data = await response.json()
-      const transactionsData = (data.data && data.data.transactions) || []
-
-      // Extrair categorias únicas das transações existentes
       const existingCategories = [...new Set(
         transactionsData
           .map(transaction => transaction.category)
           .filter(category => category && category.trim() !== '')
-      )]
+      )];
 
       // Combinar categorias existentes com as padrão
-      const combinedCategories = new Map()
-      
+      const combinedCategories = new Map();
+
       // Adicionar categorias padrão
       defaultCategories.forEach(cat => {
-        combinedCategories.set(cat.value, cat)
-      })
+        const normalizedValue = cat.value.replace(/\s+/g, '_');
+        combinedCategories.set(normalizedValue, {
+          value: normalizedValue,
+          label: cat.label
+        });
+      });
 
       // Adicionar categorias existentes (sobrescrever se já existir)
       existingCategories.forEach(category => {
-        const normalizedValue = category.toLowerCase().replace(/\s+/g, '_')
+        const normalizedValue = category.replace(/\s+/g, '_');
         combinedCategories.set(normalizedValue, {
           value: normalizedValue,
           label: category
-        })
-      })
+        });
+      });
 
       const finalCategories = Array.from(combinedCategories.values())
-        .sort((a, b) => a.label.localeCompare(b.label))
+        .sort((a, b) => a.label.localeCompare(b.label));
 
-      setCategories(finalCategories)
-    } catch (err) {
-      console.warn('Erro ao buscar categorias, usando categorias padrão:', err.message)
-      setCategories(defaultCategories)
-    } finally {
-      setLoading(false)
-    }
-  }, [getUserInfo, isAuthenticated, authenticatedFetch, defaultCategories])
-
-  // Carregar apenas uma vez quando autenticado
-  useEffect(() => {
-    if (status === 'authenticated' && !initialLoadDone.current) {
-      initialLoadDone.current = true
-      fetchCategories()
-    } else if (status !== 'authenticated') {
-      setCategories(defaultCategories)
-    }
-  }, [status, fetchCategories, defaultCategories])
-
-  return { categories, loading, error, refetch: fetchCategories }
+      return finalCategories;
+    },
+    enabled,
+    staleTime: 1000 * 60 * 5,
+  });
 }
 
-/**
- * @useDeleteTransaction Hook para deletar uma transação
- */
-export function useDeleteTransaction() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const { getUserInfo, isAuthenticated, authenticatedFetch } = useAuth()
+export function useCreateTransactionMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
 
-  const deleteTransaction = useCallback(async (transactionId) => {
-    if (!isAuthenticated()) {
-      throw new Error('Usuário não autenticado')
-    }
-
-    const userInfo = getUserInfo()
-    if (!userInfo?.id) {
-      throw new Error('ID do usuário não encontrado')
-    }
-
-    setLoading(true)
-    setError(null)
-
-    try {
+  return useMutation({
+    mutationFn: async (transactionData) => {
+      const userInfo = getUserInfo();
       const response = await authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/transactions/{id}?id=${transactionId}&userId=${userInfo.id}`,
-        { method: 'DELETE' }
-      )
+        `${process.env.NEXT_PUBLIC_API_URL}/transactions?userId=${userInfo.id}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(transactionData),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Erro ao cadastrar transação');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      // Quando uma transação é criada com sucesso, invalidamos os dados que podem ter mudado:
+      // 1. A lista de transações
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      // 2. Os saldos das contas
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      // 3. A lista de categorias, caso uma nova tenha sido criada
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
+}
+
+export function useDownloadReportMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+
+  return useMutation({
+    mutationFn: async (reportFilters) => {
+      const { startDate, endDate, type, accountId } = reportFilters;
+      const userInfo = getUserInfo();
+
+      const queryParams = new URLSearchParams({
+        userId: userInfo.id.toString(),
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        type,
+      });
+
+      if (accountId && accountId !== 'all') {
+        queryParams.append('accountId', accountId);
+      }
+
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions/download?${queryParams.toString()}`;
+      const response = await authenticatedFetch(url);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Erro na resposta da API' }))
-        throw new Error(errorData.message || `Erro HTTP ${response.status}`)
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Erro ao gerar relatório');
       }
 
-      const data = await response.json()
+      return response.blob();
+    },
+  });
+}
+
+export function useUpdateTransactionMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ transactionId, transactionData }) => {
+      console.log('Update mutation called with:', { transactionId, transactionData });
       
-      if (data.error) {
-        throw new Error(data.message || 'Erro ao deletar transação')
+      const userInfo = getUserInfo();
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions/{id}?id=${transactionId}&userId=${userInfo.id}`;
+      
+      console.log('Making PATCH request to:', url);
+      console.log('Request body:', JSON.stringify(transactionData));
+      
+      const response = await authenticatedFetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transactionData),
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
+      if (!response.ok) {
+        console.error('Response not ok. Status:', response.status, 'StatusText:', response.statusText);
+        const responseText = await response.text();
+        console.error('Response text:', responseText);
+        
+        let errorData = {};
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Failed to parse error response as JSON:', e);
+          errorData = { message: `HTTP ${response.status}: ${response.statusText}` };
+        }
+        
+        console.error('Update failed:', errorData);
+        throw new Error(errorData.message || `Erro ao atualizar transação (HTTP ${response.status})`);
       }
-
-      return data
-    } catch (err) {
-      setError(err.message || 'Erro ao deletar transação')
-      throw err
-    } finally {
-      setLoading(false)
+      
+      const result = await response.json();
+      console.log('Update successful:', result);
+      return result;
+    },
+    onSuccess: (data) => {
+      console.log('Mutation onSuccess called with:', data);
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+    onError: (error) => {
+      console.error('Mutation onError called with:', error);
     }
-  }, [getUserInfo, isAuthenticated, authenticatedFetch])
-
-  return { deleteTransaction, loading, error }
+  });
 }

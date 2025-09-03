@@ -38,8 +38,11 @@ const AuthenticatedHeader = () => {
 
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
-    const fileName = avatarPath.replace('src/uploads/', '');
-    return `https://personal-finance-api.app.fslab.dev/uploads/${fileName}`;
+    const fileName = avatarPath.replace(/src[\\/]uploads[\\/]|src[\\/]seed[\\/]images[\\/]/g, '');
+    console.log(`File name: ${fileName}`);
+    console.log(`Base URL: ${process.env.NEXT_PUBLIC_API_URL}/uploads/${fileName}`);
+
+    return `${process.env.NEXT_PUBLIC_API_URL}/uploads/${fileName}`;
 
   };
 

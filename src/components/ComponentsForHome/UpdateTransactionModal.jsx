@@ -2,20 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod'
-import { CalendarIcon, ChevronsUpDown } from "lucide-react"
+import { zodResolver } from '@hookform/resolvers/zod';
+import { CalendarIcon, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Calendar } from "@/components/ui/calendar"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -23,19 +22,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 import {
   Combobox,
   ComboboxContent,
@@ -46,26 +45,24 @@ import {
   ComboboxList,
   ComboboxTrigger,
   ComboboxCreateNew,
-} from '@/components/ui/shadcn-io/combobox'
-import { createTransactionSchema } from '@/schemas/TransactionSchemas'
-import { useAccountsQuery, useTransactionCategoriesQuery, useCreateTransactionMutation } from '@/utils/apiClient';
-import ButtonC from '../Custom-Button'
+} from '@/components/ui/shadcn-io/combobox';
+import { updateTransactionSchema } from '@/schemas/TransactionSchemas';
+import { useAccountsQuery, useTransactionCategoriesQuery, useUpdateTransactionMutation } from '@/utils/apiClient';
+import ButtonC from '../Custom-Button';
 
-const RegisterTransactionModal = ({ isOpen, onClose }) => {
-  const [dateOpen, setDateOpen] = useState(false)
-  const [paymentMethods, setPaymentMethods] = useState([])
+const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
+  const [dateOpen, setDateOpen] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState([]);
   const [localCategories, setLocalCategories] = useState([]);
-  const [isInstallment, setIsInstallment] = useState(false);
   const { data: accountsData, isLoading: accountsLoading } = useAccountsQuery();
   const { data: categoriesData, isLoading: categoriesLoading } = useTransactionCategoriesQuery();
-  const { mutate: createTransaction, isPending } = useCreateTransactionMutation();
+  const { mutate: updateTransaction, isPending, isError, error, isSuccess } = useUpdateTransactionMutation();
   const accounts = accountsData?.accounts ?? [];
-  // categoriesData pode ser undefined no início, então default para []
   const categories = categoriesData ?? [];
 
-
   const form = useForm({
-    resolver: zodResolver(createTransactionSchema),
+    resolver: zodResolver(updateTransactionSchema),
+    mode: 'onSubmit',
     defaultValues: {
       type: '',
       name: '',
@@ -75,25 +72,43 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
       description: '',
       recurring: false,
       number_installments: undefined,
+      current_installment: undefined,
       accountId: undefined,
       paymentMethodId: undefined,
     },
-  })
-  const watchedAccountId = form.watch('accountId')
+  });
+
+  useEffect(() => {
+    if (transaction) {
+      console.log('Setting form data from transaction:', transaction);
+      const formData = {
+        ...transaction,
+        value: parseFloat(transaction.value),
+        accountId: transaction.accountId,
+        paymentMethodId: transaction.paymentMethodId,
+        release_date: new Date(transaction.release_date).toISOString().split('T')[0],
+        description: transaction.description || '', 
+        // Convert null values to undefined for optional fields
+        number_installments: transaction.number_installments ?? undefined,
+        current_installment: transaction.current_installment ?? undefined,
+      };
+      console.log('Form data to set:', formData);
+      form.reset(formData);
+    }
+  }, [transaction, form]);
+
+
+  const watchedAccountId = form.watch('accountId');
   const currentSelectedAccount = accounts.find(acc => acc.id === parseInt(watchedAccountId));
 
-
-  // Atualiza métodos de pagamento ao trocar de conta
   useEffect(() => {
     if (currentSelectedAccount && currentSelectedAccount.accountPaymentMethods) {
       setPaymentMethods(currentSelectedAccount.accountPaymentMethods.map(apm => apm.paymentMethod));
-      form.setValue('paymentMethodId', undefined);
     } else {
       setPaymentMethods([]);
     }
-  }, [currentSelectedAccount, form]);
+  }, [currentSelectedAccount]);
 
-  // Sempre que categoriesData mudar, atualiza localCategories para garantir que as categorias estáticas e do backend estejam presentes
   useEffect(() => {
     if (Array.isArray(categoriesData)) {
       setLocalCategories(categoriesData);
@@ -105,8 +120,7 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
   const handleCreateNewCategory = (newCategory) => {
     const trimmedCategory = newCategory.trim();
     if (trimmedCategory) {
-      // Normaliza o value igual ao backend
-      const normalizedValue = trimmedCategory().replace(/\s+/g, '_');
+      const normalizedValue = trimmedCategory.toLowerCase().replace(/\s+/g, '_');
       const newCategoryItem = {
         value: normalizedValue,
         label: trimmedCategory
@@ -119,71 +133,109 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
       }
       form.setValue('category', normalizedValue);
     }
-  }
-
-  const handleSubmit = async (data) => {
-    const requestData = {
-      type: data.type,
-      name: data.name,
-      category: data.category,
-      value: parseFloat(data.value),
-      release_date: data.release_date,
-      description: data.description || '',
-      recurring: data.recurring,
-      accountId: parseInt(data.accountId),
-      paymentMethodId: data.paymentMethodId ? parseInt(data.paymentMethodId) : undefined,
-    }
-
-    if (data.number_installments && data.number_installments > 1) {
-      requestData.number_installments = parseInt(data.number_installments)
-    }
-    createTransaction(requestData, {
-      onSuccess: () => {
-        toast.success("Transação cadastrada com sucesso!", {
-          description: `${data.type === 'income' ? 'Receita' : 'Despesa'} de ${new Intl.NumberFormat("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-          }).format(data.value)} adicionada`
-        });
-        form.reset();
-        setTimeout(() => {
-          onClose();
-        }, 250); // Fecha o modal após 0.25s
-      },
-      onError: (error) => {
-        toast.error("Erro ao cadastrar transação", {
-          description: error.message || "Ocorreu um erro inesperado. Tente novamente."
-        });
-      }
-    });
   };
 
-  const selectedAccount = accounts.find(acc => acc.id === parseInt(watchedAccountId));
+  const handleSubmit = async (data) => {
+    console.log('handleSubmit called with data:', data);
+    console.log('Form errors:', form.formState.errors);
+    console.log('Form is valid:', form.formState.isValid);
+    console.log('transaction:', transaction);
+    
+    if (!transaction) {
+      console.error('No transaction provided');
+      toast.error("Erro interno", {
+        description: "Transação não encontrada"
+      });
+      return;
+    }
 
+    try {
+      const requestData = {
+        type: data.type,
+        name: data.name,
+        category: data.category,
+        value: parseFloat(data.value),
+        release_date: data.release_date,
+        description: data.description && data.description.trim() !== '' ? data.description.trim() : undefined,
+        recurring: Boolean(data.recurring),
+        accountId: parseInt(data.accountId),
+        paymentMethodId: data.paymentMethodId ? parseInt(data.paymentMethodId) : undefined,
+      };
+
+      // Adicionar campos de parcelas se existirem
+      if (data.number_installments && data.number_installments > 0) {
+        requestData.number_installments = parseInt(data.number_installments);
+      }
+      
+      if (data.current_installment && data.current_installment > 0) {
+        requestData.current_installment = parseInt(data.current_installment);
+      }
+
+      console.log('Sending update request with data:', requestData);
+
+      updateTransaction({ transactionId: transaction.id, transactionData: requestData }, {
+        onSuccess: (response) => {
+          console.log('Update successful:', response);
+          
+          // Mostra toast de sucesso
+          toast.success("Transação atualizada com sucesso!", {
+            description: `${data.type === 'income' ? 'Receita' : 'Despesa'} de ${new Intl.NumberFormat("pt-BR", {
+              style: "currency",
+              currency: "BRL",
+            }).format(data.value)} atualizada`
+          });
+          
+          setTimeout(() => {
+            onClose();
+          }, 1000);
+        },
+        onError: (error) => {
+          console.error('Update failed:', error);
+          
+          // Mostra toast de erro
+          toast.error("Erro ao atualizar transação", {
+            description: error.message || "Ocorreu um erro inesperado. Tente novamente."
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
+      toast.error("Erro ao atualizar transação", {
+        description: "Ocorreu um erro inesperado. Tente novamente."
+      });
+    }
+  };
+
+  const handleInvalidSubmit = (errors) => {
+    console.log('Form validation errors:', errors);
+    toast.error("Erro de validação", {
+      description: "Verifique os campos obrigatórios"
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="!fixed !right-0 !top-0 !left-auto !bottom-0 !h-screen !w-[500px] !max-w-none !rounded-none !border-l 
-        !border-r-0 !overflow-y-auto !m-0 !p-6 !translate-x-0 !translate-y-0 !z-50 !bg-background !shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out 
+        className="!fixed !right-0 !top-0 !left-auto !bottom-0 !h-screen !w-[500px] !max-w-none !rounded-none !border-l
+        !border-r-0 !overflow-y-auto !m-0 !p-6 !translate-x-0 !translate-y-0 !z-50 !bg-background !shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out
         data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right"
         showCloseButton={true}
       >
         <div className="space-y-10">
           <DialogHeader >
-            <DialogTitle className="text-xl font-semibold">Nova Transação</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">Atualizar Transação</DialogTitle>
           </DialogHeader>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-              <FormField
+            <form onSubmit={form.handleSubmit(handleSubmit, handleInvalidSubmit)} className="space-y-6">
+            <FormField
                 control={form.control}
                 name="type"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de Transação</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl className="w-full">
+                      <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o tipo" />
                         </SelectTrigger>
@@ -268,6 +320,17 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
                 name="value"
                 render={({ field }) => {
                   const [displayValue, setDisplayValue] = React.useState("")
+
+                  useEffect(() => {
+                    if (field.value) {
+                      const formatted = new Intl.NumberFormat("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      }).format(field.value)
+                      setDisplayValue(formatted)
+                    }
+                  }, [field.value])
+
                   const formatCurrency = (rawValue) => {
                     const numericValue = rawValue.replace(/\D/g, "")
                     const valueInReais = (parseInt(numericValue || "0", 10) / 100).toFixed(2)
@@ -359,6 +422,8 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
                   </FormItem>
                 )}
               />
+              
+
               <FormField
                 control={form.control}
                 name="accountId"
@@ -366,7 +431,7 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
                   <FormItem>
                     <FormLabel>Conta</FormLabel>
                     <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                      <FormControl  className="w-full">
+                      <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione a conta" />
                         </SelectTrigger>
@@ -388,7 +453,7 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
                   </FormItem>
                 )}
               />
-              {selectedAccount && (
+              {currentSelectedAccount && (
                 <FormField
                   control={form.control}
                   name="paymentMethodId"
@@ -398,12 +463,12 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
                       <Select
                         onValueChange={(value) => field.onChange(parseInt(value))}
                         value={field.value?.toString()}
-                        disabled={!selectedAccount}
+                        disabled={!currentSelectedAccount}
                       >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder={
-                              !selectedAccount ? "Selecione uma conta primeiro" : "Selecione a forma de pagamento"
+                              !currentSelectedAccount ? "Selecione uma conta primeiro" : "Selecione a forma de pagamento"
                             } />
                           </SelectTrigger>
                         </FormControl>
@@ -420,65 +485,84 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
                   )}
                 />
               )}
-              {isInstallment && (
-                <FormField
-                  control={form.control}
-                  name="number_installments"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Número de Parcelas</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="2"
-                          max="60"
-                          placeholder="Ex: 12"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
+              {transaction?.number_installments && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="number_installments"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número de Parcelas</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Ex: 12"
+                            min="1"
+                            value={field.value || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === '' ? undefined : parseInt(value));
+                            }}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="current_installment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Parcela Atual</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="1"
+                            max={transaction.number_installments}
+                            placeholder="Ex: 1"
+                            value={field.value || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === '' ? undefined : parseInt(value));
+                            }}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
               )}
 
-              <div className="space-y-3">
-                <FormField
-                  control={form.control}
-                  name="recurring"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Recorrente</FormLabel>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex flex-row items-start space-x-3 space-y-0">
-                  <Checkbox
-                    checked={isInstallment}
-                    onCheckedChange={(checked) => {
-                      setIsInstallment(checked)
-                      if (!checked) {
-                        form.setValue('number_installments', undefined)
-                      } else {
-                        form.setValue('number_installments', 2)
-                      }
-                    }}
-                  />
-                  <div className="space-y-1 leading-none">
-                    <Label>Parcelado</Label>
-                  </div>
-                </div>
-              </div>
+              <FormField
+                control={form.control}
+                name="recurring"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Transação Recorrente
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        {transaction?.recurring ? "Desmarque para tornar esta transação não recorrente" : "Marque para tornar esta transação recorrente"}
+                      </p>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="flex pt-4 flex-row justify-between">
                 <ButtonC
@@ -487,17 +571,14 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
                   altura="40px"
                   onClick={onClose}
                   disabled={isPending}
-                >
-                  Cancelar
-                </ButtonC>
+                />
                 <ButtonC
-                  texto={isPending ? "Cadastrando..." : "Lançar"}
+                  texto={isPending ? "Atualizando..." : "Atualizar"}
                   largura="200px"
                   altura="40px"
                   type="submit"
                   disabled={isPending}
-                >
-                </ButtonC>
+                />
               </div>
             </form>
           </Form>
@@ -506,4 +587,5 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
     </Dialog>
   );
 }
-export default RegisterTransactionModal;
+
+export default UpdateTransactionModal;

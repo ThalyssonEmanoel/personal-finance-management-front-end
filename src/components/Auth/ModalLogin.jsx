@@ -30,6 +30,7 @@ import { loginSchema } from "@/schemas/AuthSchemas"
 import { createUserSchema } from "@/schemas/UserSchemas"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
 
 export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
   const [tab, setTab] = useState('login');
@@ -77,13 +78,20 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
       });
 
       if (result?.error) {
-        setLoginError('Email ou senha incorretos.');
+        toast.error("Erro ao fazer login", {
+          description: "Email ou senha incorretos"
+        });
       } else {
+        toast.success("Login realizado com sucesso!", {
+          description: "Bem-vindo de volta!"
+        });
         onClose();
         router.push('/home');
       }
     } catch (error) {
-      setLoginError('Erro ao fazer login. Tente novamente.');
+      toast.error("Erro ao fazer login", {
+        description: "Ocorreu um erro inesperado. Tente novamente."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -114,20 +122,21 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
       const response = await createUser(formData);
       
       if (response && !response.error) {
-        setRegisterSuccess('Conta criada com sucesso! Você pode fazer login agora.');
+        toast.success("Conta criada com sucesso!", {
+          description: "Agora você pode fazer login com suas credenciais"
+        });
+        
         registerForm.reset();
         document.getElementById("file-name").textContent = "Nenhum arquivo escolhido";
         
         setTimeout(() => {
           setTab('login');
-          setRegisterSuccess('');
         }, 2000);
       }
     } catch (error) {
       console.error('Erro ao criar conta:', error);
-      registerForm.setError('root', {
-        type: 'manual',
-        message: error.message || 'Erro ao criar conta. Tente novamente.',
+      toast.error("Erro ao criar conta", {
+        description: error.message || "Ocorreu um erro inesperado. Tente novamente."
       });
     } finally {
       setIsLoading(false);
@@ -165,11 +174,6 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                 <Form {...loginForm}>
                   <form onSubmit={loginForm.handleSubmit(handleLoginSubmit)}>
                     <CardContent className="grid gap-6">
-                      {loginError && (
-                        <div className="text-red-500 text-sm text-center">
-                          {loginError}
-                        </div>
-                      )}
                       <FormField
                         control={loginForm.control}
                         name="email"
@@ -239,16 +243,6 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                 <Form {...registerForm}>
                   <form onSubmit={registerForm.handleSubmit(handleRegisterSubmit)}>
                     <CardContent className="grid gap-6">
-                      {registerForm.formState.errors.root && (
-                        <div className="text-red-500 text-sm text-center">
-                          {registerForm.formState.errors.root.message}
-                        </div>
-                      )}
-                      {registerSuccess && (
-                        <div className="text-green-500 text-sm text-center">
-                          {registerSuccess}
-                        </div>
-                      )}
                       <FormField
                         control={registerForm.control}
                         name="name"
@@ -356,11 +350,11 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                               </FormControl>
                               <label
                                 htmlFor="user-image"
-                                className="text-center px-4 py border-2 rounded-sm text-black text-sm hover:text-white hover:shadow-md hover:bg-brown duration-200 cursor-pointer"
+                                className="flex justify-center items-center text-center md:text-center border-2 rounded-sm text-black text-sm hover:text-white hover:shadow-md hover:bg-brown duration-200 cursor-pointer h-8"
                               >
                                 Selecionar imagem
                               </label>
-                              <span id="file-name" className="text-sm text-gray-600">
+                              <span id="file-name" className="text-sm text-gray-600 -mt-2 mb-6 ml-0.5">
                                 Nenhum arquivo escolhido
                               </span>
                             </div>
