@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { useAuth } from "@/hooks/useAuth";
 import { Progress } from "@/components/ui/progress";
-import { InfoCard, TransactionsTable, FiltersSection } from '@/components/ComponentsForHome';
+import { InfoCard, TransactionsTable, FiltersSection, ChartsSection } from '@/components/ComponentsForHome';
 import { useAccountsQuery, useTransactionsQuery } from '@/utils/apiClient';
 
 
@@ -87,10 +87,13 @@ export default function HomePage() {
           isPositive={false}
         />
       </div>
-      <div className="px-20 mt-10 mb-40">
+      <div className="px-20 mt-10 mb-10">
         <TransactionsTable
           filters={filters}
         />
+      </div>
+      <div className="mt-10 mb-10">
+        <ChartsSection className="px-20 mt-10 pb-10" filters={filters} />
       </div>
     </>
   );

@@ -58,7 +58,7 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
   const [isInstallment, setIsInstallment] = useState(false);
   const { data: accountsData, isLoading: accountsLoading } = useAccountsQuery();
   const { data: categoriesData, isLoading: categoriesLoading } = useTransactionCategoriesQuery();
-  const { mutate: createTransaction, isPending, isError, error, isSuccess } = useCreateTransactionMutation();
+  const { mutate: createTransaction, isPending } = useCreateTransactionMutation();
   const accounts = accountsData?.accounts ?? [];
   // categoriesData pode ser undefined no início, então default para []
   const categories = categoriesData ?? [];
@@ -106,7 +106,7 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
     const trimmedCategory = newCategory.trim();
     if (trimmedCategory) {
       // Normaliza o value igual ao backend
-      const normalizedValue = trimmedCategory.toLowerCase().replace(/\s+/g, '_');
+      const normalizedValue = trimmedCategory().replace(/\s+/g, '_');
       const newCategoryItem = {
         value: normalizedValue,
         label: trimmedCategory
@@ -183,7 +183,7 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
                   <FormItem>
                     <FormLabel>Tipo de Transação</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
+                      <FormControl className="w-full">
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o tipo" />
                         </SelectTrigger>
@@ -366,7 +366,7 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
                   <FormItem>
                     <FormLabel>Conta</FormLabel>
                     <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                      <FormControl>
+                      <FormControl  className="w-full">
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione a conta" />
                         </SelectTrigger>

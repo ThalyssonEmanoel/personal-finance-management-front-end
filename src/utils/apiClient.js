@@ -106,14 +106,14 @@ export function useDeleteTransactionMutation() {
 export function useTransactionCategoriesQuery() {
   const { authenticatedFetch, getUserInfo, enabled, isAuthenticated } = useApi();
   const defaultCategories = React.useMemo(() => [
-    { value: 'transporte', label: 'Transporte' },
-    { value: 'moradia', label: 'Moradia' },
-    { value: 'saúde', label: 'Saúde' },
-    { value: 'educação', label: 'Educação' },
-    { value: 'lazer', label: 'Lazer' },
-    { value: 'vestuário', label: 'Vestuário' },
-    { value: 'investimentos', label: 'Investimentos' },
-    { value: 'outros', label: 'Outros' },
+    { value: 'Transporte', label: 'Transporte' },
+    { value: 'Moradia', label: 'Moradia' },
+    { value: 'Saúde', label: 'Saúde' },
+    { value: 'Educação', label: 'Educação' },
+    { value: 'Lazer', label: 'Lazer' },
+    { value: 'Vestuário', label: 'Vestuário' },
+    { value: 'Investimentos', label: 'Investimentos' },
+    { value: 'Outros', label: 'Outros' },
   ], []);
 
   return useQuery({
@@ -144,7 +144,7 @@ export function useTransactionCategoriesQuery() {
 
       // Adicionar categorias padrão
       defaultCategories.forEach(cat => {
-        const normalizedValue = cat.value.toLowerCase().replace(/\s+/g, '_');
+        const normalizedValue = cat.value.replace(/\s+/g, '_');
         combinedCategories.set(normalizedValue, {
           value: normalizedValue,
           label: cat.label
@@ -153,7 +153,7 @@ export function useTransactionCategoriesQuery() {
 
       // Adicionar categorias existentes (sobrescrever se já existir)
       existingCategories.forEach(category => {
-        const normalizedValue = category.toLowerCase().replace(/\s+/g, '_');
+        const normalizedValue = category.replace(/\s+/g, '_');
         combinedCategories.set(normalizedValue, {
           value: normalizedValue,
           label: category

@@ -497,9 +497,8 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                         <FormControl>
                           <Input
                             type="number"
-                            min="2"
-                            max="60"
                             placeholder="Ex: 12"
+                            min="1"
                             value={field.value || ''}
                             onChange={(e) => {
                               const value = e.target.value;

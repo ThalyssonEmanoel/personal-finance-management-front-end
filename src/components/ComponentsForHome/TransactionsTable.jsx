@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { MoreHorizontal, Search, Trash2, X } from "lucide-react";
+import { MoreHorizontal, Search, Trash2, X, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -54,6 +54,7 @@ import ButtonC from '@/components/Custom-Button';
 import { useTransactionsQuery, useDeleteTransactionMutation } from '../../utils/apiClient.js';
 import ReportDownloadModal from './ReportDonwloadModal';
 import UpdateTransactionModal from './UpdateTransactionModal';
+import ViewTransactionModal from './ViewTransactionModal';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -64,11 +65,23 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
     type: 'All',
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [sorting, setSorting] = useState([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [transactionToEdit, setTransactionToEdit] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [transactionToView, setTransactionToView] = useState(null);
+  const handleViewClick = (transaction) => {
+    setTransactionToView(transaction);
+    setIsViewModalOpen(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setIsViewModalOpen(false);
+    setTransactionToView(null);
+  };
 
   const queryFilters = useMemo(() => ({
     ...externalFilters,
@@ -145,7 +158,22 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
   const columns = [
     {
       accessorKey: "type",
-      header: () => React.createElement("div", null, "Tipo"),
+      header: ({ column }) => {
+        return React.createElement("div", { 
+          className: "flex items-center cursor-pointer hover:text-gray-600",
+          onClick: () => column.toggleSorting(column.getIsSorted() === "asc")
+        },
+          "Tipo",
+          React.createElement("div", { className: "ml-1 flex flex-col" },
+            React.createElement(ChevronUp, { 
+              className: `h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`
+            }),
+            React.createElement(ChevronDown, { 
+              className: `h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`
+            })
+          )
+        );
+      },
       cell: ({ row }) => {
         const type = row.original.type;
         const tipoTexto = type === "income" ? "receita" : "despesa";
@@ -156,36 +184,122 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
           React.createElement("span", { className: "pl-4 capitalize" }, tipoTexto)
         );
       },
+      sortingFn: (rowA, rowB) => {
+        const a = rowA.original.type;
+        const b = rowB.original.type;
+        return a.localeCompare(b);
+      },
     },
     {
       accessorKey: "name",
-      header: "Nome",
+      header: ({ column }) => {
+        return React.createElement("div", { 
+          className: "flex items-center cursor-pointer hover:text-gray-600",
+          onClick: () => column.toggleSorting(column.getIsSorted() === "asc")
+        },
+          "Nome",
+          React.createElement("div", { className: "ml-1 flex flex-col" },
+            React.createElement(ChevronUp, { 
+              className: `h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`
+            }),
+            React.createElement(ChevronDown, { 
+              className: `h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`
+            })
+          )
+        );
+      },
       cell: ({ row }) => React.createElement("div", null, row.getValue("name")),
     },
     {
       accessorKey: "category",
-      header: "Categoria",
+      header: ({ column }) => {
+        return React.createElement("div", { 
+          className: "flex items-center cursor-pointer hover:text-gray-600",
+          onClick: () => column.toggleSorting(column.getIsSorted() === "asc")
+        },
+          "Categoria",
+          React.createElement("div", { className: "ml-1 flex flex-col" },
+            React.createElement(ChevronUp, { 
+              className: `h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`
+            }),
+            React.createElement(ChevronDown, { 
+              className: `h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`
+            })
+          )
+        );
+      },
       cell: ({ row }) => React.createElement("div", null, row.getValue("category")),
     },
     {
       accessorKey: "account",
-      header: "Conta",
+      header: ({ column }) => {
+        return React.createElement("div", { 
+          className: "flex items-center cursor-pointer hover:text-gray-600",
+          onClick: () => column.toggleSorting(column.getIsSorted() === "asc")
+        },
+          "Conta",
+          React.createElement("div", { className: "ml-1 flex flex-col" },
+            React.createElement(ChevronUp, { 
+              className: `h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`
+            }),
+            React.createElement(ChevronDown, { 
+              className: `h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`
+            })
+          )
+        );
+      },
       cell: ({ row }) => React.createElement("div", null, row.original.account?.name || "N/A"),
+      accessorFn: (row) => row.account?.name || "N/A",
     },
     {
       accessorKey: "release_date",
-      header: "Data",
+      header: ({ column }) => {
+        return React.createElement("div", { 
+          className: "flex items-center cursor-pointer hover:text-gray-600",
+          onClick: () => column.toggleSorting(column.getIsSorted() === "asc")
+        },
+          "Data",
+          React.createElement("div", { className: "ml-1 flex flex-col" },
+            React.createElement(ChevronUp, { 
+              className: `h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`
+            }),
+            React.createElement(ChevronDown, { 
+              className: `h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`
+            })
+          )
+        );
+      },
       cell: ({ row }) => {
         const date = new Date(row.getValue("release_date"));
-        //Somar 1 dia
+        //Somar 1 dia, pois o componente está puxando um dia anterior
         date.setDate(date.getDate() + 1);
         const formatted = date.toLocaleDateString("pt-BR");
         return React.createElement("div", null, formatted);
       },
+      sortingFn: (rowA, rowB) => {
+        const dateA = new Date(rowA.original.release_date);
+        const dateB = new Date(rowB.original.release_date);
+        return dateB.getTime() - dateA.getTime(); // Mais recente primeiro (desc por padrão)
+      },
     },
     {
       accessorKey: "value",
-      header: "Valor(R$)",
+      header: ({ column }) => {
+        return React.createElement("div", { 
+          className: "flex items-center cursor-pointer hover:text-gray-600",
+          onClick: () => column.toggleSorting(column.getIsSorted() === "asc")
+        },
+          "Valor(R$)",
+          React.createElement("div", { className: "ml-1 flex flex-col" },
+            React.createElement(ChevronUp, { 
+              className: `h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`
+            }),
+            React.createElement(ChevronDown, { 
+              className: `h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`
+            })
+          )
+        );
+      },
       cell: ({ row }) => {
         const value = parseFloat(row.original.value_installment || row.original.value);
         const type = row.original.type;
@@ -199,6 +313,18 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
         return React.createElement("div", {
           className: isNegative ? "text-red-600 font-bold" : "text-green-600 font-bold"
         }, isNegative ? `- ${formatted}` : `+ ${formatted}`);
+      },
+      sortingFn: (rowA, rowB) => {
+        const valueA = parseFloat(rowA.original.value_installment || rowA.original.value);
+        const valueB = parseFloat(rowB.original.value_installment || rowB.original.value);
+        const typeA = rowA.original.type;
+        const typeB = rowB.original.type;
+        
+        // Converter despesas para valores negativos para ordenação correta
+        const finalValueA = typeA === "expense" ? -valueA : valueA;
+        const finalValueB = typeB === "expense" ? -valueB : valueB;
+        
+        return finalValueA - finalValueB; // Menor para maior (incluindo negativos)
       },
     },
     {
@@ -216,7 +342,9 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
           React.createElement(DropdownMenuContent, { align: "end" },
             React.createElement(DropdownMenuLabel, null, "Ações"),
             React.createElement(DropdownMenuSeparator),
-            React.createElement(DropdownMenuItem, null, "Visualizar"),
+            React.createElement(DropdownMenuItem, {
+              onClick: () => handleViewClick(transaction)
+            }, "Visualizar"),
             React.createElement(DropdownMenuItem, {
               onClick: () => handleEditClick(transaction)
             }, "Editar"),
@@ -236,9 +364,11 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
     manualPagination: true,
     pageCount: pagination.total_pages,
     state: {
+      sorting,
       pagination: {
         pageIndex: pagination.page - 1,
         pageSize: ITEMS_PER_PAGE,
@@ -294,7 +424,7 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
           <ButtonC texto="Baixar extrato" largura="120px" altura="40px" type="button" onClick={() => setIsReportModalOpen(true)} />
         </div>
       </div>
-      <div className="border-2 border-neutral-300 rounded-md">
+      <div className="border-2 border-neutral-300 rounded-md h-165">
         <div className="px-8 py-8">
           <div className="flex justify-between">
             <div>
@@ -398,6 +528,12 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
       <ReportDownloadModal
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
+      />
+
+      <ViewTransactionModal
+        isOpen={isViewModalOpen}
+        onClose={handleCloseViewModal}
+        transaction={transactionToView}
       />
 
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
