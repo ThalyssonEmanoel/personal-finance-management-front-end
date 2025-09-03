@@ -236,7 +236,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                     <FormLabel>Tipo de Transação</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className={"w-full"}>
                           <SelectValue placeholder="Selecione o tipo" />
                         </SelectTrigger>
                       </FormControl>
@@ -432,7 +432,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                     <FormLabel>Conta</FormLabel>
                     <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className={"w-full"}>
                           <SelectValue placeholder="Selecione a conta" />
                         </SelectTrigger>
                       </FormControl>
@@ -466,7 +466,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                         disabled={!currentSelectedAccount}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className={"w-full"}>
                             <SelectValue placeholder={
                               !currentSelectedAccount ? "Selecione uma conta primeiro" : "Selecione a forma de pagamento"
                             } />

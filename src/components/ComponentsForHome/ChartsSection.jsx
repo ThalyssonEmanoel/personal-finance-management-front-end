@@ -166,7 +166,7 @@ const ChartsSection = ({ filters }) => {
             <div className="flex flex-col min-w-[200px]">
               <label className="mb-2 text-sm font-medium text-gray-700">Organizar gráficos por:</label>
               <Select value={expenseSortBy} onValueChange={setExpenseSortBy}>
-                <SelectTrigger className="w-full h-8 border-2 border-neutral-300 rounded-sm text-xs">
+                <SelectTrigger className="w-56 h-8 border-2 border-neutral-300 rounded-sm text-xs">
                   <SelectValue placeholder="Selecione organização" />
                 </SelectTrigger>
                 <SelectContent>
@@ -273,7 +273,7 @@ const ChartsSection = ({ filters }) => {
             <div className="flex flex-col min-w-[200px]">
               <label className="mb-2 text-sm font-medium text-gray-700">Organizar gráficos por:</label>
               <Select value={incomeSortBy} onValueChange={setIncomeSortBy}>
-                <SelectTrigger className="w-full h-8 border-2 border-neutral-300 rounded-sm text-xs">
+                <SelectTrigger className="w-56 h-8 border-2 border-neutral-300 rounded-sm text-xs">
                   <SelectValue placeholder="Selecione organização" />
                 </SelectTrigger>
                 <SelectContent>

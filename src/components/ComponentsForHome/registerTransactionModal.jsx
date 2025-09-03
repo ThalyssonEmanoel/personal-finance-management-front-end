@@ -106,7 +106,7 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
     const trimmedCategory = newCategory.trim();
     if (trimmedCategory) {
       // Normaliza o value igual ao backend
-      const normalizedValue = trimmedCategory().replace(/\s+/g, '_');
+      const normalizedValue = trimmedCategory.replace(/\s+/g, '_');
       const newCategoryItem = {
         value: normalizedValue,
         label: trimmedCategory
