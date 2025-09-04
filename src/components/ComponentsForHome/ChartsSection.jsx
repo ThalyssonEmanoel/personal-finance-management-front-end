@@ -280,13 +280,15 @@ const ChartsSection = ({ filters, onCategoryClick }) => {
                 {showExpenseOthers && (
                   <div className="w-1/2 pl-4">
                     <h4 className="font-semibold mb-2">Demais categorias</h4>
-                    <ul>
-                      {expenseOtherCategories.map(cat => (
-                        <li key={cat.name} className="text-sm mb-1">
-                          {cat.name} - {cat.transactionCount} Transações - {formatCurrency(cat.totalValue)}
-                        </li>
-                      ))}
-                    </ul>
+                    <div className={expenseOtherCategories.length > 6 ? "max-h-32 overflow-y-auto" : ""}>
+                      <ul>
+                        {expenseOtherCategories.map(cat => (
+                          <li key={cat.name} className="text-sm mb-1">
+                            {cat.name} - {cat.transactionCount} Transações - {formatCurrency(cat.totalValue)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 )}
               </div>
@@ -414,13 +416,15 @@ const ChartsSection = ({ filters, onCategoryClick }) => {
                 {showIncomeOthers && (
                   <div className="w-1/2 pl-4">
                     <h4 className="font-semibold mb-2">Demais categorias</h4>
-                    <ul>
-                      {incomeOtherCategories.map(cat => (
-                        <li key={cat.name} className="text-sm mb-1">
-                          {cat.name} - {cat.transactionCount} Transações - {formatCurrency(cat.totalValue)}
-                        </li>
-                      ))}
-                    </ul>
+                    <div className={incomeOtherCategories.length > 6 ? "max-h-32 overflow-y-auto" : ""}>
+                      <ul>
+                        {incomeOtherCategories.map(cat => (
+                          <li key={cat.name} className="text-sm mb-1">
+                            {cat.name} - {cat.transactionCount} Transações - {formatCurrency(cat.totalValue)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 )}
               </div>
