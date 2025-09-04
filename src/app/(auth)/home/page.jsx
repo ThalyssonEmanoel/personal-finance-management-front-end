@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState } from 'react';
@@ -32,6 +31,14 @@ export default function HomePage() {
     setFilters(prevFilters => ({
       ...prevFilters,
       ...newFilters,
+      page: 1
+    }));
+  };
+
+  const handleCategoryClick = (category) => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      category: category,
       page: 1
     }));
   };
@@ -88,7 +95,11 @@ export default function HomePage() {
         />
       </div>
       <div className="mt-10 mb-10">
-        <ChartsSection className="px-20 mt-10 pb-10" filters={filters} />
+        <ChartsSection
+          className="px-20 mt-10 pb-10"
+          filters={filters}
+          onCategoryClick={handleCategoryClick}
+        />
       </div>
     </>
   );
