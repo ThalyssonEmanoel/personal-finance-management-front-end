@@ -89,9 +89,9 @@ const AuthenticatedHeader = () => {
       <div>
         <DropdownMenu>
           <DropdownMenuTrigger className="focus:outline-none">
-            <Avatar className="size-12 cursor-pointer hover:ring-2 hover:ring-gray-300 transition-all">
+            <Avatar className="size-12 cursor-pointer hover:ring-2 hover:ring-gray-300 transition-all border-2 border-solid border-tertiary">
               <AvatarImage src={getAvatarUrl(user?.avatar)} alt={user?.name || "Avatar"} />
-              <AvatarFallback className="bg-gray-200 text-gray-700 font-medium">
+              <AvatarFallback className="bg-gray-200 text-gray-700 font-medium ">
                 {getInitials(user?.name)}
               </AvatarFallback>
             </Avatar>
