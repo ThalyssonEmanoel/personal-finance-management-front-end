@@ -49,6 +49,7 @@ import {
 import { updateTransactionSchema } from '@/schemas/TransactionSchemas';
 import { useAccountsQuery, useTransactionCategoriesQuery, useUpdateTransactionMutation } from '@/utils/apiClient';
 import ButtonC from '../Custom-Button';
+import Decimal from "decimal.js";
 
 const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
   const [dateOpen, setDateOpen] = useState(false);
@@ -83,7 +84,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
       console.log('Setting form data from transaction:', transaction);
       const formData = {
         ...transaction,
-        value: parseFloat(transaction.value),
+        value: new Decimal(transaction.value).toNumber(),
         accountId: transaction.accountId,
         paymentMethodId: transaction.paymentMethodId,
         release_date: new Date(transaction.release_date).toISOString().split('T')[0],

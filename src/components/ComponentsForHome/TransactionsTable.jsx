@@ -55,6 +55,7 @@ import { useTransactionsQuery, useDeleteTransactionMutation } from '../../utils/
 import ReportDownloadModal from './ReportDonwloadModal';
 import UpdateTransactionModal from './UpdateTransactionModal';
 import ViewTransactionModal from './ViewTransactionModal';
+import Decimal from 'decimal.js';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -301,7 +302,7 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
         );
       },
       cell: ({ row }) => {
-        const value = parseFloat(row.original.value_installment || row.original.value);
+        const value = new Decimal(row.original.value_installment || row.original.value).toNumber();
         const type = row.original.type;
         const isNegative = type === "expense";
 
@@ -315,8 +316,8 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
         }, isNegative ? `- ${formatted}` : `+ ${formatted}`);
       },
       sortingFn: (rowA, rowB) => {
-        const valueA = parseFloat(rowA.original.value_installment || rowA.original.value);
-        const valueB = parseFloat(rowB.original.value_installment || rowB.original.value);
+        const valueA = new Decimal(rowA.original.value_installment || rowA.original.value).toNumber();
+        const valueB = new Decimal(rowB.original.value_installment || rowB.original.value).toNumber();
         const typeA = rowA.original.type;
         const typeB = rowB.original.type;
         

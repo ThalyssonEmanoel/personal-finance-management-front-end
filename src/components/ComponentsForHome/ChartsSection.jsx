@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { useTransactionsChartQuery, useAccountsQuery } from '../../utils/apiClient';
+import { ColumnChart } from './ColumnChart';
+import Decimal from 'decimal.js';
 
 const chartColors = [
   "var(--chart-1)",
@@ -49,7 +51,7 @@ const processChartData = (transactions, type, sortBy = 'value') => {
 
   const categoryData = filteredTransactions.reduce((acc, curr) => {
     const categoryName = curr.category || 'Demais categorias';
-    const value = parseFloat(curr.value_installment || curr.value || 0);
+    const value = new Decimal(curr.value_installment || curr.value || 0).toNumber();
 
     if (!acc[categoryName]) {
       acc[categoryName] = {
@@ -445,6 +447,19 @@ const ChartsSection = ({ filters, onCategoryClick }) => {
               {totalIncomeTransactions} transaç{totalIncomeTransactions !== 1 ? 'ões' : 'ão'} no período
             </div>
           </CardFooter>
+        </Card>
+      </div>
+      <div className="px-20 mt-10 grid md:grid-cols-2 gap-6">
+        <Card className="flex flex-col border-2 border-neutral-300">
+          <CardContent className="pt-6">
+            <ColumnChart filters={filters} type="expense" />
+          </CardContent>
+        </Card>
+        
+        <Card className="flex flex-col border-2 border-neutral-300">
+          <CardContent className="pt-6">
+            <ColumnChart filters={filters} type="income" />
+          </CardContent>
         </Card>
       </div>
     </>

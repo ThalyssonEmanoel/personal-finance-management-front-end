@@ -305,3 +305,43 @@ export function useTransactionsChartQuery(filters) {
     enabled: enabled,
   });
 }
+
+export function useGoalsQuery(filters, transactionType) {
+  const { authenticatedFetch, getUserInfo, enabled } = useApi();
+
+  return useQuery({
+    queryKey: ['goals', filters, transactionType],
+    queryFn: async ({ queryKey }) => {
+      const [_key, currentFilters, type] = queryKey;
+      const userInfo = getUserInfo();
+      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() });
+
+      if (type) {
+        queryParams.append('transaction_type', type);
+      }
+
+      if (currentFilters.goalsDate) {
+        queryParams.append('date', currentFilters.goalsDate);
+      } else {
+        const currentYear = new Date().getFullYear();
+        const firstDayOfYear = new Date(currentYear, 0, 1);
+        queryParams.append('date', firstDayOfYear.toISOString().split('T')[0]);
+      }
+
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/goals?${queryParams.toString()}`;
+      const response = await authenticatedFetch(url);
+      
+      if (!response.ok) throw new Error('Erro ao buscar metas');
+      
+      const data = await response.json();
+      if (data.error) throw new Error(data.message || 'Erro na resposta da API');
+
+      return {
+        goals: data.data || [],
+        total: data.total || 0,
+      };
+    },
+    placeholderData: (previousData) => previousData,
+    enabled: enabled,
+  });
+}
