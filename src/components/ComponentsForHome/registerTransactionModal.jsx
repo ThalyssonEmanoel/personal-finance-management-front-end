@@ -50,6 +50,7 @@ import {
 import { createTransactionSchema } from '@/schemas/TransactionSchemas'
 import { useAccountsQuery, useTransactionCategoriesQuery, useCreateTransactionMutation } from '@/utils/apiClient';
 import ButtonC from '../Custom-Button'
+import Decimal from "decimal.js";
 
 const RegisterTransactionModal = ({ isOpen, onClose }) => {
   const [dateOpen, setDateOpen] = useState(false)
@@ -106,7 +107,7 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
     const trimmedCategory = newCategory.trim();
     if (trimmedCategory) {
       // Normaliza o value igual ao backend
-      const normalizedValue = trimmedCategory().replace(/\s+/g, '_');
+      const normalizedValue = trimmedCategory.replace(/\s+/g, '_');
       const newCategoryItem = {
         value: normalizedValue,
         label: trimmedCategory
@@ -126,7 +127,7 @@ const RegisterTransactionModal = ({ isOpen, onClose }) => {
       type: data.type,
       name: data.name,
       category: data.category,
-      value: parseFloat(data.value),
+      value: new Decimal(data.value).toNumber(),
       release_date: data.release_date,
       description: data.description || '',
       recurring: data.recurring,

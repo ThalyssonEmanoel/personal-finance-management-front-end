@@ -7,16 +7,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import Decimal from "decimal.js";
 
 const ViewTransactionModal = ({ isOpen, onClose, transaction }) => {
   if (!isOpen || !transaction) return null;
 
   const formatCurrency = (value, type) => {
-    const numericValue = parseFloat(value);
+    const numericValue = new Decimal(value);
     const formatted = new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(Math.abs(numericValue));
+    }).format(numericValue.abs().toNumber());
 
     return type === 'expense' ? `- ${formatted}` : `+ ${formatted}`;
   };

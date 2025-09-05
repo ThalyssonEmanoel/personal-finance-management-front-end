@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState } from 'react';
@@ -14,17 +13,12 @@ export default function HomePage() {
     page: 1,
     limit: 5
   });
-
   const { data: accountsData, isLoading: isAccountsLoading } = useAccountsQuery();
   const { data: transactionsData, isLoading: isTransactionsLoading } = useTransactionsQuery(filters);
-
   const totalBalance = accountsData?.totalBalance ?? 0;
   const accounts = accountsData?.accounts ?? [];
   const totalIncome = transactionsData?.totalIncome ?? 0;
-  console.log("Total Income:", totalIncome);
-
   const totalExpense = transactionsData?.totalExpense ?? 0;
-
   const getCurrentBalance = () => {
     if (filters.accountId && filters.accountId !== "All") {
       const selectedAccount = accounts.find(acc => acc.id.toString() === filters.accountId.toString());
@@ -37,6 +31,14 @@ export default function HomePage() {
     setFilters(prevFilters => ({
       ...prevFilters,
       ...newFilters,
+      page: 1
+    }));
+  };
+
+  const handleCategoryClick = (category) => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      category: category,
       page: 1
     }));
   };
@@ -93,7 +95,11 @@ export default function HomePage() {
         />
       </div>
       <div className="mt-10 mb-10">
-        <ChartsSection className="px-20 mt-10 pb-10" filters={filters} />
+        <ChartsSection
+          className="px-20 mt-10 pb-10"
+          filters={filters}
+          onCategoryClick={handleCategoryClick}
+        />
       </div>
     </>
   );

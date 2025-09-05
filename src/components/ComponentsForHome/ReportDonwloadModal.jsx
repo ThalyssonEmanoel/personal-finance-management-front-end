@@ -176,7 +176,7 @@ export function ReportDownloadModal({ isOpen, onClose }) {
               <div className="grid gap-2">
                 <Label className="text-base font-medium text-gray-700">Tipo de transação</Label>
                 <Select value={type} onValueChange={setType}>
-                  <SelectTrigger className="border-2 border-neutral-300 rounded-sm">
+                  <SelectTrigger className="border-2 border-neutral-300 rounded-sm w-full">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -193,7 +193,7 @@ export function ReportDownloadModal({ isOpen, onClose }) {
               <div className="grid gap-2">
                 <Label className="text-base font-medium text-gray-700">Conta (opcional)</Label>
                 <Select value={accountId} onValueChange={setAccountId}>
-                  <SelectTrigger className="border-2 border-neutral-300 rounded-sm">
+                  <SelectTrigger className="border-2 border-neutral-300 rounded-sm w-full">
                     <SelectValue placeholder="Todas as contas" />
                   </SelectTrigger>
                   <SelectContent>

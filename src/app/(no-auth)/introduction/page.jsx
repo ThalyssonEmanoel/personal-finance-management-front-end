@@ -43,8 +43,8 @@ export default function IntroductionPage() {
     <>
       <Header onLoginClick={handleLoginClick} />
       <div className="px-10 md:px-20 lg:px-40 mt-16 space-y-16 mx-8">
-        <section className="flex flex-col lg:flex-row items-start gap-12">
-          <img src="/Imagem1Introdução.jpg" alt="Financial Record" className="rounded-lg shadow-lg max-w-full sm:max-w-md" />
+        <section className="flex flex-col lg:flex-row items-start gap-12 justify-between">
+          <img src="/Imagem1Introdução.jpg" alt="Financial Record" className="rounded-lg shadow-lg max-w-full sm:max-w-2xl" />
           <div className="space-y-4 max-w-2xl">
             <h1 className="text-4xl font-bold text-gray-900">Financial Record</h1>
             <h2 className="text-2xl font-medium text-gray-700">Organize sua vida financeira de forma prática e segura.</h2>
@@ -56,8 +56,8 @@ export default function IntroductionPage() {
           </div>
         </section>
 
-        <section className="flex flex-col lg:flex-row-reverse items-start gap-12">
-          <img src="/AnotandoGastos.jpg" alt="Como funciona" className="rounded-lg shadow-lg max-w-full sm:max-w-md" />
+        <section className="flex justify-between flex-col lg:flex-row-reverse items-start gap-12">
+          <img src="/AnotandoGastos.jpg" alt="Como funciona" className="rounded-lg shadow-lg h-[382px] w-full sm:max-w-2xl" />
           <div className="space-y-4 max-w-2xl">
             <h2 className="text-3xl font-bold text-gray-900">Como funciona</h2>
             <h3 className="text-xl font-medium text-gray-700">Registre, acompanhe e visualize</h3>
@@ -69,9 +69,9 @@ export default function IntroductionPage() {
           </div>
         </section>
 
-        <section className="max-w-7xl mx-auto mb-10">
+        <section className="max-w mx-auto mb-10">
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">O que você pode fazer</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-40">
 
             <div className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition border-2 border-gray-200">
               <h3 className="text-xl font-semibold text-gray-800 mb-3">Cadastrar despesas e receitas</h3>

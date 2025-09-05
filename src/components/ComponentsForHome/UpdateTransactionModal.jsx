@@ -49,6 +49,7 @@ import {
 import { updateTransactionSchema } from '@/schemas/TransactionSchemas';
 import { useAccountsQuery, useTransactionCategoriesQuery, useUpdateTransactionMutation } from '@/utils/apiClient';
 import ButtonC from '../Custom-Button';
+import Decimal from "decimal.js";
 
 const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
   const [dateOpen, setDateOpen] = useState(false);
@@ -83,7 +84,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
       console.log('Setting form data from transaction:', transaction);
       const formData = {
         ...transaction,
-        value: parseFloat(transaction.value),
+        value: new Decimal(transaction.value).toNumber(),
         accountId: transaction.accountId,
         paymentMethodId: transaction.paymentMethodId,
         release_date: new Date(transaction.release_date).toISOString().split('T')[0],
@@ -236,7 +237,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                     <FormLabel>Tipo de Transação</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className={"w-full"}>
                           <SelectValue placeholder="Selecione o tipo" />
                         </SelectTrigger>
                       </FormControl>
@@ -432,7 +433,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                     <FormLabel>Conta</FormLabel>
                     <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className={"w-full"}>
                           <SelectValue placeholder="Selecione a conta" />
                         </SelectTrigger>
                       </FormControl>
@@ -466,7 +467,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                         disabled={!currentSelectedAccount}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className={"w-full"}>
                             <SelectValue placeholder={
                               !currentSelectedAccount ? "Selecione uma conta primeiro" : "Selecione a forma de pagamento"
                             } />
