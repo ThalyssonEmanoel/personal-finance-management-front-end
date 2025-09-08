@@ -1,7 +1,7 @@
 'use client'
 import { useAuth } from "@/hooks/useAuth"
 import { useState } from "react"
-import { AccountsTable } from "@/components/ComponentsForAccounts"
+import { AccountsTable, RegisterAccountModal } from "@/components/ComponentsForAccounts"
 import { Progress } from "@/components/ui/progress"
 import ButtonC from "@/components/Custom-Button"
 import {
@@ -17,6 +17,7 @@ import {
 export default function AccountsPage() {
   const { isLoading: isAuthLoading } = useAuth();
   const [selectedFilter, setSelectedFilter] = useState("Contas");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAccountChange = () => {
     // Callback para quando uma conta for alterada
@@ -24,7 +25,11 @@ export default function AccountsPage() {
   };
 
   const handleCreateAccount = () => {
-    console.log("Create account clicked");
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
   };
 
   const isLoading = isAuthLoading();
@@ -69,11 +74,16 @@ export default function AccountsPage() {
             largura="120px"
             altura="40px"
             type="button"
-            // onClick={() => setIsModalOpen(true)}
+            onClick={handleCreateAccount}
           />
         </div>
       </div>
-        <AccountsTable onAccountChange={handleAccountChange} />
+      <AccountsTable onAccountChange={handleAccountChange} />
+      
+      <RegisterAccountModal 
+        isOpen={isModalOpen} 
+        onClose={handleCloseModal} 
+      />
     </div>
   );
 }

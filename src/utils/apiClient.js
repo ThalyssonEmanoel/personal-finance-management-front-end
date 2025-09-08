@@ -330,9 +330,9 @@ export function useGoalsQuery(filters, transactionType) {
 
       const url = `${process.env.NEXT_PUBLIC_API_URL}/goals?${queryParams.toString()}`;
       const response = await authenticatedFetch(url);
-      
+
       if (!response.ok) throw new Error('Erro ao buscar metas');
-      
+
       const data = await response.json();
       if (data.error) throw new Error(data.message || 'Erro na resposta da API');
 
@@ -343,5 +343,164 @@ export function useGoalsQuery(filters, transactionType) {
     },
     placeholderData: (previousData) => previousData,
     enabled: enabled,
+  });
+}
+
+export function usePaymentMethodsQuery() {
+  const { authenticatedFetch, enabled } = useApi();
+
+  return useQuery({
+    queryKey: ['payment-methods'],
+    queryFn: async () => {
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/payment-methods`
+      );
+      if (!response.ok) throw new Error('Erro ao buscar métodos de pagamento');
+      const data = await response.json();
+      return data.data || data || [];
+    },
+    enabled,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useCreatePaymentMethodMutation() {
+  const { authenticatedFetch } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (paymentMethodData) => {
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/payment-methods`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(paymentMethodData),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Erro ao criar método de pagamento');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payment-methods'] });
+    },
+  });
+}
+
+export function useCreateAccountMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (accountData) => {
+      const userInfo = getUserInfo();
+      const formData = new FormData();
+      
+      // Adiciona cada campo individualmente ao FormData
+      Object.keys(accountData).forEach(key => {
+        if (key === 'icon' && accountData[key]) {
+          formData.append('icon', accountData.icon);
+        } else if (key === 'paymentMethodIds') {
+          // Envia como string separada por vírgulas
+          formData.append('paymentMethodIds', accountData[key]);
+        } else if (accountData[key] !== null && accountData[key] !== undefined) {
+          formData.append(key, accountData[key]);
+        }
+      });
+
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/account?userId=${userInfo.id}`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+      
+      if (!response.ok) {
+        let errorMessage = 'Erro ao criar conta';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+        } catch (e) {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+}
+
+export function useAccountTypesQuery() {
+  const { authenticatedFetch, getUserInfo, enabled } = useApi();
+  const defaultTypes = React.useMemo(() => [
+    { value: 'corrente', label: 'Corrente' },
+    { value: 'poupanca', label: 'Poupança' },
+    { value: 'carteira', label: 'Carteira' },
+    { value: 'investimento', label: 'Investimento' }
+  ], []);
+
+  return useQuery({
+    queryKey: ['account-types'],
+    queryFn: async () => {
+      if (!getUserInfo()?.id) {
+        return defaultTypes;
+      }
+
+      const userInfo = getUserInfo();
+      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() });
+
+      try {
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/account/${userInfo.id}?${queryParams.toString()}`;
+        const response = await authenticatedFetch(url, { method: 'GET' });
+        const data = await response.json();
+
+        const accountsData = data.data?.contas || [];
+
+        if (!response.ok) {
+          return defaultTypes;
+        }
+        const existingTypes = [...new Set(
+          accountsData
+            .map(account => account.type)
+            .filter(type => type && type.trim() !== '')
+        )];
+
+        const combinedTypes = new Map();
+        defaultTypes.forEach(type => {
+          combinedTypes.set(type.value, type);
+        });
+        existingTypes.forEach(type => {
+          if (!combinedTypes.has(type)) {
+            const typeMap = {
+              'corrente': 'Corrente',
+              'poupanca': 'Poupança',
+              'carteira': 'Carteira',
+              'investimento': 'Investimento'
+            };
+            combinedTypes.set(type, {
+              value: type,
+              label: typeMap[type] || type.charAt(0).toUpperCase() + type.slice(1)
+            });
+          }
+        });
+
+        const finalTypes = Array.from(combinedTypes.values())
+          .sort((a, b) => a.label.localeCompare(b.label));
+
+        return finalTypes;
+      } catch (error) {
+        console.error('Erro ao buscar tipos de conta:', error);
+        return defaultTypes;
+      }
+    },
+    enabled,
+    staleTime: 1000 * 60 * 5,
   });
 }

@@ -90,16 +90,16 @@ const AccountsTable = ({ onAccountChange }) => {
       header: "",
       cell: ({ row }) => {
         const account = row.original;
-        const fileName = account.icon ? account.icon.replace(/src[\\/]uploads[\\/]|src[\\/]seed[\\/]images[\\/]/g, '') : 'avatar2.jpeg';
+        const fileName = account.icon ? account.icon.replace(/src[\\/]uploads[\\/]|src[\\/]seed[\\/]images[\\/]|uploads[\\/]/g, '') : 'avatar1.jpeg';
         const imageUrl = `${process.env.NEXT_PUBLIC_API_URL}/uploads/${fileName}`;
-        
+
         return React.createElement("div", { className: "flex items-center justify-center w-16" },
           React.createElement("img", {
             src: imageUrl,
             alt: account.name,
             className: "w-12 h-12 rounded-full object-cover border-2 border-solid border-tertiary",
             onError: (e) => {
-              e.target.src = `${process.env.NEXT_PUBLIC_API_URL}/uploads/avatar2.jpeg`;
+              e.target.src = `${process.env.NEXT_PUBLIC_API_URL}/uploads/avatar1.jpeg`;
             }
           })
         );
@@ -273,7 +273,7 @@ const AccountsTable = ({ onAccountChange }) => {
   }
 
   return (
-    <div className="border-2 border-neutral-300 rounded-md h-165">
+    <div className="border-2 border-neutral-300 rounded-md h-180 overflow-y-auto">
       <div className="px-8 py-8">
         <div className="flex justify-between">
           <div>
@@ -312,7 +312,7 @@ const AccountsTable = ({ onAccountChange }) => {
                 </TableRow>
               ))}
             </TableHeader>
-            <TableBody>
+            <TableBody className="max-h-96">
               {filteredAccounts.length > 0 ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id} style={{ backgroundColor: "rgb(250, 249, 244)" }}>

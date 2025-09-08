@@ -38,8 +38,7 @@ const AuthenticatedHeader = () => {
 
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
-    const fileName = avatarPath.replace(/src[\\/]uploads[\\/]|src[\\/]seed[\\/]images[\\/]/g, '');
-
+    const fileName = avatarPath.replace(/src[\\/]uploads[\\/]|src[\\/]seed[\\/]images[\\/]|src[\/]uploads[\/]/g, '');
     return `${process.env.NEXT_PUBLIC_API_URL}/uploads/${fileName}`;
 
   };
