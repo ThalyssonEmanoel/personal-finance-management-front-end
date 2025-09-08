@@ -390,6 +390,63 @@ export function useCreatePaymentMethodMutation() {
   });
 }
 
+export function useAccountQuery(accountId) {
+  const { authenticatedFetch, getUserInfo, enabled } = useApi();
+
+  return useQuery({
+    queryKey: ['account', accountId],
+    queryFn: async () => {
+      if (!accountId) return null;
+      
+      const userInfo = getUserInfo();
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/account/${accountId}?userId=${userInfo.id}`,
+        { method: 'GET' }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Erro ao buscar conta');
+      }
+      
+      const data = await response.json();
+      return data.data;
+    },
+    enabled: enabled && !!accountId,
+  });
+}
+
+export function useDeleteAccountMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (accountId) => {
+      const userInfo = getUserInfo();
+      console.log('Deleting account with ID:', accountId, 'for user ID:', userInfo.id);
+      
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/account/{id}?id=${accountId}&userId=${userInfo.id}`,
+        { method: 'DELETE' }
+      );
+      
+      if (!response.ok) {
+        let errorMessage = 'Erro ao excluir conta';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+        } catch (e) {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+}
+
 export function useCreateAccountMutation() {
   const { authenticatedFetch, getUserInfo } = useApi();
   const queryClient = useQueryClient();

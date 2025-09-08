@@ -7,7 +7,7 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { MoreHorizontal, ChevronUp, ChevronDown, Search } from "lucide-react";
+import { MoreHorizontal, ChevronUp, ChevronDown, Search, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,6 +18,13 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -26,28 +33,75 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { useAccountsQuery } from '@/utils/apiClient';
+import { useAccountsQuery, useDeleteAccountMutation } from '@/utils/apiClient';
+import { ViewAccount, UpdateAccount } from '@/components/ComponentsForAccounts';
 
 const AccountsTable = ({ onAccountChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sorting, setSorting] = useState([]);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [accountToView, setAccountToView] = useState(null);
+  const [accountToEdit, setAccountToEdit] = useState(null);
+  const [accountToDelete, setAccountToDelete] = useState(null);
 
   const { data, isLoading, isError, error } = useAccountsQuery();
   const accountsData = data?.accounts ?? [];
 
+  const { mutate: deleteAccount, isPending: isDeleting } = useDeleteAccountMutation();
+
   const handleViewClick = (account) => {
-    console.log('View account:', account);
-    // ...
+    setAccountToView(account);
+    setIsViewModalOpen(true);
   };
 
   const handleEditClick = (account) => {
-    console.log('Edit account:', account);
-    // ...
+    setAccountToEdit(account);
+    setIsEditModalOpen(true);
   };
 
   const handleDeleteClick = (account) => {
-    console.log('Delete account:', account);
-    // ...
+    setAccountToDelete(account);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setIsViewModalOpen(false);
+    setAccountToView(null);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setAccountToEdit(null);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!accountToDelete) return;
+
+    console.log('Deleting account with ID:', accountToDelete.id);
+    
+    deleteAccount(accountToDelete.id, {
+      onSuccess: () => {
+        setIsDeleteModalOpen(false);
+        setAccountToDelete(null);
+        if (onAccountChange) {
+          onAccountChange();
+        }
+      },
+      onError: (error) => {
+        console.error('Erro ao excluir conta:', error);
+      }
+    });
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setAccountToDelete(null);
+  };
+
+  const getDeleteMessage = (account) => {
+    return `Tem certeza que deseja excluir a conta "${account.name}"? Esta ação é irreversível e todos os dados associados a esta conta serão permanentemente removidos.`;
   };
 
   const filteredAccounts = useMemo(() => {
@@ -340,6 +394,68 @@ const AccountsTable = ({ onAccountChange }) => {
           </Table>
         </div>
       </div>
+
+      <ViewAccount
+        isOpen={isViewModalOpen}
+        onClose={handleCloseViewModal}
+        account={accountToView}
+      />
+
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancelDelete}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="flex flex-col items-center text-center">
+            <div className="mt-4 mb-6">
+              <Trash2 className="h-16 w-16 text-neutral-300 mx-auto" />
+            </div>
+            
+            <DialogHeader className="mb-6">
+              <DialogTitle className="text-lg font-semibold">
+                Excluir Conta
+              </DialogTitle>
+            </DialogHeader>
+
+            <p className="mb-6 text-sm leading-relaxed">
+              {accountToDelete && getDeleteMessage(accountToDelete)}
+            </p>
+
+            <DialogFooter className="flex gap-3 w-full">
+              <Button
+                variant="outline"
+                onClick={handleCancelDelete}
+                className="flex-1"
+                disabled={isDeleting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                className="flex-1"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Excluindo...' : 'Excluir'}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <UpdateAccount
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        account={accountToEdit}
+      />
     </div>
   );
 };
