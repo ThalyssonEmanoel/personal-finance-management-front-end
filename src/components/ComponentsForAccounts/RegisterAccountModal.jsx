@@ -79,6 +79,11 @@ const RegisterAccountModal = ({ isOpen, onClose }) => {
     }
   }, [accountTypesData])
 
+  // Effect para atualizar o form quando os IDs selecionados mudarem
+  useEffect(() => {
+    form.setValue('paymentMethodIds', selectedPaymentMethodIds.join(','))
+  }, [selectedPaymentMethodIds, form])
+
   const handleCreateNewAccountType = (newTypeName) => {
     const trimmedName = newTypeName.trim()
     if (trimmedName) {
@@ -129,13 +134,9 @@ const RegisterAccountModal = ({ isOpen, onClose }) => {
 
   const handlePaymentMethodToggle = (methodId, checked) => {
     setSelectedPaymentMethodIds(prev => {
-      const newIds = checked
+      return checked
         ? [...prev, methodId]
         : prev.filter(id => id !== methodId)
-
-      // Atualiza o form com a string de IDs separados por vírgula
-      form.setValue('paymentMethodIds', newIds.join(','))
-      return newIds
     })
   }
 
@@ -414,31 +415,6 @@ const RegisterAccountModal = ({ isOpen, onClose }) => {
                                 setNewPaymentMethodName('')
                               }}
                             />
-                          </div>
-                        </div>
-                      )}
-                      {selectedPaymentMethodIds.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-sm text-gray-600 mb-2">Métodos selecionados ({selectedPaymentMethodIds.length}):</p>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedPaymentMethodIds.map(methodId => {
-                              const method = localPaymentMethods.find(m => m.id === methodId)
-                              return method ? (
-                                <span
-                                  key={methodId}
-                                  className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                                >
-                                  {method.name}
-                                  <button
-                                    type="button"
-                                    onClick={() => handlePaymentMethodToggle(methodId, false)}
-                                    className="ml-1 text-blue-600 hover:text-blue-800"
-                                  >
-                                    ×
-                                  </button>
-                                </span>
-                              ) : null
-                            })}
                           </div>
                         </div>
                       )}

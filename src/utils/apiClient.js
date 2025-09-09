@@ -447,6 +447,51 @@ export function useDeleteAccountMutation() {
   });
 }
 
+export function useUpdateAccountMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ accountId, accountData }) => {
+      const userInfo = getUserInfo();
+      const formData = new FormData();
+      
+      Object.keys(accountData).forEach(key => {
+        if (key === 'icon' && accountData[key]) {
+          formData.append('icon', accountData.icon);
+        } else if (key === 'paymentMethodIds') {
+          formData.append('paymentMethodIds', accountData[key]);
+        } else if (accountData[key] !== null && accountData[key] !== undefined) {
+          formData.append(key, accountData[key]);
+        }
+      });
+
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/account/{id}?id=${accountId}&userId=${userInfo.id}`,
+        {
+          method: 'PATCH',
+          body: formData,
+        }
+      );
+      
+      if (!response.ok) {
+        let errorMessage = 'Erro ao atualizar conta';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+        } catch (e) {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+}
+
 export function useCreateAccountMutation() {
   const { authenticatedFetch, getUserInfo } = useApi();
   const queryClient = useQueryClient();

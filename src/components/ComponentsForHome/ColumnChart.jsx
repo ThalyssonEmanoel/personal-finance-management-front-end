@@ -24,11 +24,10 @@ export function ColumnChart({ filters, type = "expense" }) {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
   
-  // Criar a data formatada para a API quando ambos os valores estão selecionados
+  // Criar a data formatada para a API 
   const goalsDateFilter = selectedMonth && selectedYear ? 
     `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01` : '';
   
-  // Criar filtros para metas com data específica
   const goalsFilters = {
     ...filters,
     goalsDate: goalsDateFilter
@@ -76,11 +75,19 @@ export function ColumnChart({ filters, type = "expense" }) {
   };
 
   const generateYearOptions = () => {
-    const years = [];
-    for (let year = 1980; year <= 2070; year++) {
-      years.push({ value: year, label: year.toString() });
-    }
-    return years;
+    if (!transactionsData?.transactions) return [];
+    
+    const years = new Set();
+    transactionsData.transactions.forEach(transaction => {
+      if (transaction.release_date) {
+        const year = new Date(transaction.release_date).getFullYear();
+        years.add(year);
+      }
+    });
+    
+    return Array.from(years)
+      .sort((a, b) => b - a) 
+      .map(year => ({ value: year, label: year.toString() }));
   };
 
   const getDateRangeText = () => {
