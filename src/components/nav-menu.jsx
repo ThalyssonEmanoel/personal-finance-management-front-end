@@ -1,10 +1,10 @@
 'use client'
-import '../styles/globals.css';
+import { memo } from 'react';
 import ButtonC from './Custom-Button';
 
-const Header = ({ onLoginClick }) => {
+const Header = memo(({ onLoginClick }) => {
   return (
-    <nav className=' bg-secondary border-b-2 border-solid border-b-tertiary flex justify-between items-center w-full h-24'>
+    <nav className='bg-secondary border-b-2 border-solid border-b-tertiary flex justify-between items-center w-full h-24'>
       <div className="flex items-center">
         <a href="/introduction" className="no-underline text-black text-3xl ml-[184px]">
           Financial Record
@@ -15,6 +15,8 @@ const Header = ({ onLoginClick }) => {
       </div>
     </nav>
   );
-};
+});
+
+Header.displayName = 'Header';
 
 export default Header;

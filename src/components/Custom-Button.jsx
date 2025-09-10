@@ -1,8 +1,6 @@
-import PropTypes from 'prop-types';
-import '../styles/globals.css';
+import { memo } from 'react';
 
-
-const ButtonC = ({ texto, largura, altura, onClick, dataTest = null, type = 'button', disabled = false }) => {
+const ButtonC = memo(({ texto, largura, altura, onClick, dataTest = null, type = 'button', disabled = false }) => {
   return (
     <button
       type={type}
@@ -21,16 +19,8 @@ const ButtonC = ({ texto, largura, altura, onClick, dataTest = null, type = 'but
       {texto}
     </button>
   );
-};
+});
 
-ButtonC.propTypes = {
-  texto: PropTypes.string.isRequired,
-  largura: PropTypes.string.isRequired,
-  altura: PropTypes.string,
-  onClick: PropTypes.func,
-  dataTest: PropTypes.string,
-  type: PropTypes.string,
-  disabled: PropTypes.bool,
-};
+ButtonC.displayName = 'ButtonC';
 
 export default ButtonC;
