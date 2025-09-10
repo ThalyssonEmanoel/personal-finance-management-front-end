@@ -280,7 +280,7 @@ const ChartsSection = ({ filters, onCategoryClick }) => {
                   </PieChart>
                 </ChartContainer>
                 {showExpenseOthers && (
-                  <div className="w-1/2 pl-4">
+                  <div className="w-1/2 pl-4 mt-4">
                     <h4 className="font-semibold mb-2">Demais categorias</h4>
                     <div className={expenseOtherCategories.length > 6 ? "max-h-32 overflow-y-auto" : ""}>
                       <ul>
@@ -416,7 +416,7 @@ const ChartsSection = ({ filters, onCategoryClick }) => {
                   </PieChart>
                 </ChartContainer>
                 {showIncomeOthers && (
-                  <div className="w-1/2 pl-4">
+                  <div className="w-1/2 pl-4 mt-4">
                     <h4 className="font-semibold mb-2">Demais categorias</h4>
                     <div className={incomeOtherCategories.length > 6 ? "max-h-32 overflow-y-auto" : ""}>
                       <ul>
