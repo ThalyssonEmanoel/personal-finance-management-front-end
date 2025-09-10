@@ -174,9 +174,13 @@ export function ColumnChart({ filters, type = "expense" }) {
         
         <div className="flex gap-4 items-end">
           <div className="flex flex-col">
-            <label className="mb-2 text-sm font-medium text-gray-700">Selecione o mês:</label>
+            <label className="mb-2 text-sm font-medium text-gray-700" htmlFor="month-select">Selecione o mês:</label>
             <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-              <SelectTrigger className="w-32 h-8 border-2 border-neutral-300 rounded-sm text-xs">
+              <SelectTrigger 
+                id="month-select"
+                className="w-32 h-8 border-2 border-neutral-300 rounded-sm text-xs"
+                aria-label="Selecionar mês para filtrar gráfico"
+              >
                 <SelectValue placeholder="Mês" />
               </SelectTrigger>
               <SelectContent>
@@ -190,9 +194,13 @@ export function ColumnChart({ filters, type = "expense" }) {
           </div>
           
           <div className="flex flex-col">
-            <label className="mb-2 text-sm font-medium text-gray-700">Selecione o ano:</label>
+            <label className="mb-2 text-sm font-medium text-gray-700" htmlFor="year-select">Selecione o ano:</label>
             <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-              <SelectTrigger className="w-24 h-8 border-2 border-neutral-300 rounded-sm text-xs">
+              <SelectTrigger 
+                id="year-select"
+                className="w-24 h-8 border-2 border-neutral-300 rounded-sm text-xs"
+                aria-label="Selecionar ano para filtrar gráfico"
+              >
                 <SelectValue placeholder="Ano" />
               </SelectTrigger>
               <SelectContent>

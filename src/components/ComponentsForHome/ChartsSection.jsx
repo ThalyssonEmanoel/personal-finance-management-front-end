@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, memo, useCallback } from 'react';
 import { TrendingUp } from "lucide-react";
 import { Label, Pie, PieChart } from "recharts";
 import {
@@ -16,18 +16,11 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { useTransactionsChartQuery, useAccountsQuery } from '../../utils/apiClient';
 import { ColumnChart } from './ColumnChart';
+import { withPerformanceOptimization, useStableDimensions } from '@/hooks/usePerformanceOptimization';
+import AccessibleSelect from '@/components/AccessibleSelect';
 import Decimal from 'decimal.js';
 
 const chartColors = [
@@ -38,6 +31,7 @@ const chartColors = [
   "var(--chart-5)",
 ];
 
+// Função de processamento de dados otimizada
 const processChartData = (transactions, type, sortBy = 'value') => {
   const filteredTransactions = transactions.filter(t => t.type === type);
 
@@ -107,6 +101,27 @@ const processChartData = (transactions, type, sortBy = 'value') => {
   };
 };
 
+// Componente otimizado para tooltip customizado
+const CustomTooltip = memo(({ active, payload, formatCurrency }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+        <p className="font-medium text-gray-900">{data.category}</p>
+        <p className="text-sm text-gray-600">
+          Valor: {formatCurrency(data.value)}
+        </p>
+        <p className="text-sm text-gray-600">
+          Transações: {data.transactionCount}
+        </p>
+      </div>
+    );
+  }
+  return null;
+});
+
+CustomTooltip.displayName = 'CustomTooltip';
+
 const getChartConfig = (data, type) => {
   if (!data || data.length === 0) {
     return {
@@ -127,32 +142,195 @@ const getChartConfig = (data, type) => {
   return config;
 };
 
-const ChartsSection = ({ filters, onCategoryClick }) => {
+// Componente de gráfico individual otimizado
+const ChartCard = memo(({ 
+  title, 
+  data, 
+  totalTransactions, 
+  otherCategories, 
+  sortBy, 
+  onSortChange, 
+  showOthers, 
+  onToggleOthers, 
+  onPieClick, 
+  filters, 
+  formatCurrency,
+  chartConfig 
+}) => {
+  const { dimensions, elementRef } = useStableDimensions({
+    minHeight: '400px'
+  });
+
+  const sortOptions = [
+    { value: 'value', label: 'Valores' },
+    { value: 'transactions', label: 'Quantidade de transações' }
+  ];
+
+  return (
+    <Card 
+      ref={elementRef}
+      className="flex flex-col border-2 border-neutral-300"
+      style={{ minHeight: dimensions.minHeight }}
+    >
+      <div className="flex justify-between items-start pr-6">
+        <CardHeader className="items-center pb-0 flex-grow">
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>
+            {filters.release_date ? (() => {
+              const [year, month, day] = filters.release_date.split('-').map(Number);
+              const date = new Date(year, month - 1, day);
+
+              const firstDay = date.toLocaleString('pt-BR', { day: 'numeric' });
+              const lastDayDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+              const lastDay = lastDayDate.toLocaleString('pt-BR', { day: 'numeric' });
+              const monthYear = date.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+              return `${firstDay} à ${lastDay} de ${monthYear}`;
+            })() : 'Todas as transações existentes'}
+          </CardDescription>
+        </CardHeader>
+        <div className="flex flex-col min-w-[200px]">
+          <AccessibleSelect
+            value={sortBy}
+            onValueChange={onSortChange}
+            label="Organizar gráficos por:"
+            ariaLabel={`Organizar gráfico de ${title.toLowerCase()} por`}
+            items={sortOptions}
+            className="w-56 h-8 border-2 border-neutral-300 rounded-sm text-xs"
+          />
+        </div>
+      </div>
+      <CardContent className="flex-1 pb-0 flex items-center">
+        {data.length > 0 ? (
+          <div className={`flex w-full ${showOthers ? 'ml-20' : ''}`}>
+            <ChartContainer
+              config={chartConfig}
+              className="mx-auto aspect-square max-h-[250px] min-w-[250px]"
+            >
+              <PieChart>
+                <ChartTooltip
+                  cursor={false}
+                  content={(props) => <CustomTooltip {...props} formatCurrency={formatCurrency} />}
+                />
+                <Pie
+                  data={data}
+                  dataKey={sortBy === 'transactions' ? 'transactionCount' : 'value'}
+                  nameKey="category"
+                  innerRadius={60}
+                  strokeWidth={5}
+                  onClick={onPieClick}
+                  className="cursor-pointer"
+                >
+                  <Label
+                    content={({ viewBox }) => {
+                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                        return (
+                          <text
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            <tspan
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              className="fill-foreground text-3xl font-bold"
+                            >
+                              {totalTransactions}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 24}
+                              className="fill-muted-foreground"
+                            >
+                              Transações
+                            </tspan>
+                          </text>
+                        );
+                      }
+                    }}
+                  />
+                </Pie>
+              </PieChart>
+            </ChartContainer>
+            {showOthers && (
+              <div className="w-1/2 pl-4 mt-4">
+                <h4 className="font-semibold mb-2">Demais categorias</h4>
+                <div className={otherCategories.length > 6 ? "max-h-32 overflow-y-auto" : ""}>
+                  <ul>
+                    {otherCategories.map(cat => (
+                      <li key={cat.name} className="text-sm mb-1">
+                        {cat.name} - {cat.transactionCount} Transações - {formatCurrency(cat.totalValue)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mx-auto aspect-square max-h-[250px] flex items-center justify-center">
+            <div className="text-center text-gray-500">
+              <p className="text-lg mb-2">Nenhuma {title.toLowerCase()} encontrada</p>
+              <p className="text-sm">No período e filtros selecionados</p>
+            </div>
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="flex-col gap-2 text-sm">
+        <div className="text-muted-foreground leading-none">
+          Mostrando o total de {title.toLowerCase()} agrupadas por categoria
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {totalTransactions} transaç{totalTransactions !== 1 ? 'ões' : 'ão'} no período
+        </div>
+      </CardFooter>
+    </Card>
+  );
+});
+
+ChartCard.displayName = 'ChartCard';
+
+const ChartsSection = memo(({ filters, onCategoryClick }) => {
   const { data: accountsData, isLoading: isAccountsLoading } = useAccountsQuery();
   const { data: transactionsData, isLoading: isTransactionsLoading } = useTransactionsChartQuery(filters);
   const [expenseSortBy, setExpenseSortBy] = useState('value');
   const [incomeSortBy, setIncomeSortBy] = useState('value');
   const [showExpenseOthers, setShowExpenseOthers] = useState(false);
   const [showIncomeOthers, setShowIncomeOthers] = useState(false);
+  
   const isLoading = isAccountsLoading || isTransactionsLoading;
 
-  const { data: expenseData, totalTransactions: totalExpenseTransactions, otherCategories: expenseOtherCategories } = useMemo(() =>
-    processChartData(transactionsData?.transactions || [], 'expense', expenseSortBy)
-    , [transactionsData, expenseSortBy]);
-  const { data: incomeData, totalTransactions: totalIncomeTransactions, otherCategories: incomeOtherCategories } = useMemo(() =>
-    processChartData(transactionsData?.transactions || [], 'income', incomeSortBy)
-    , [transactionsData, incomeSortBy]);
+  // Memoização dos dados processados para evitar recálculos
+  const chartData = useMemo(() => {
+    const transactions = transactionsData?.transactions || [];
+    
+    const expenseData = processChartData(transactions, 'expense', expenseSortBy);
+    const incomeData = processChartData(transactions, 'income', incomeSortBy);
+    
+    return {
+      expense: expenseData,
+      income: incomeData
+    };
+  }, [transactionsData, expenseSortBy, incomeSortBy]);
 
-  const expenseChartConfig = useMemo(() => getChartConfig(expenseData, 'expense'), [expenseData]);
-  const incomeChartConfig = useMemo(() => getChartConfig(incomeData, 'income'), [incomeData]);
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value || 0);
-  };
+  // Memoização das configurações de gráfico
+  const chartConfigs = useMemo(() => ({
+    expense: getChartConfig(chartData.expense.data, 'expense'),
+    income: getChartConfig(chartData.income.data, 'income')
+  }), [chartData]);
 
-  const handlePieClick = (data, type) => {
+  // Memoização da função de formatação
+  const formatCurrency = useMemo(() => {
+    return (value) => {
+      return new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      }).format(value || 0);
+    };
+  }, []);
+
+  // Callbacks otimizados
+  const handlePieClick = useCallback((data, type) => {
     if (data.category === 'Demais categorias') {
       if (type === 'expense') {
         setShowExpenseOthers(true);
@@ -162,8 +340,15 @@ const ChartsSection = ({ filters, onCategoryClick }) => {
     } else {
       onCategoryClick(data.category);
     }
-  };
+  }, [onCategoryClick]);
 
+  const handleExpensePieClick = useCallback((data) => {
+    handlePieClick(data, 'expense');
+  }, [handlePieClick]);
+
+  const handleIncomePieClick = useCallback((data) => {
+    handlePieClick(data, 'income');
+  }, [handlePieClick]);
 
   if (isLoading) {
     return (
@@ -175,281 +360,40 @@ const ChartsSection = ({ filters, onCategoryClick }) => {
   }
 
   return (
-    <>
-      <div className="px-20 grid md:grid-cols-2 gap-6">
-        <Card className="flex flex-col border-2 border-neutral-300">
-          <div className="flex justify-between items-start pr-6">
-            <CardHeader className="items-center pb-0 flex-grow">
-              <CardTitle>Despesas</CardTitle>
-              <CardDescription>
-                {filters.release_date ? (() => {
-                  const [year, month, day] = filters.release_date.split('-').map(Number);
-                  const date = new Date(year, month - 1, day);
-
-                  const firstDay = date.toLocaleString('pt-BR', { day: 'numeric' });
-                  const lastDayDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-                  const lastDay = lastDayDate.toLocaleString('pt-BR', { day: 'numeric' });
-                  const monthYear = date.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
-                  return `${firstDay} à ${lastDay} de ${monthYear}`;
-                })() : 'Todas as transações existentes'}
-              </CardDescription>
-            </CardHeader>
-            <div className="flex flex-col min-w-[200px]">
-              <label className="mb-2 text-sm font-medium text-gray-700">Organizar gráficos por:</label>
-              <Select value={expenseSortBy} onValueChange={setExpenseSortBy}>
-                <SelectTrigger className="w-56 h-8 border-2 border-neutral-300 rounded-sm text-xs">
-                  <SelectValue placeholder="Selecione organização" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Organização</SelectLabel>
-                    <SelectItem value="value">Valores</SelectItem>
-                    <SelectItem value="transactions">Quantidade de transações</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <CardContent className="flex-1 pb-0 flex items-center">
-            {expenseData.length > 0 ? (
-              <div className={`flex w-full ${showExpenseOthers ? 'ml-20' : ''}`}>
-                <ChartContainer
-                  config={expenseChartConfig}
-                  className="mx-auto aspect-square max-h-[250px] min-w-[250px]"
-                >
-                  <PieChart>
-                    <ChartTooltip
-                      cursor={false}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                              <p className="font-medium text-gray-900">{data.category}</p>
-                              <p className="text-sm text-gray-600">
-                                Valor: {formatCurrency(data.value)}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Transações: {data.transactionCount}
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Pie
-                      data={expenseData}
-                      dataKey={expenseSortBy === 'transactions' ? 'transactionCount' : 'value'}
-                      nameKey="category"
-                      innerRadius={60}
-                      strokeWidth={5}
-                      onClick={(data) => handlePieClick(data, 'expense')}
-                      className="cursor-pointer"
-                    >
-                      <Label
-                        content={({ viewBox }) => {
-                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                            return (
-                              <text
-                                x={viewBox.cx}
-                                y={viewBox.cy}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                              >
-                                <tspan
-                                  x={viewBox.cx}
-                                  y={viewBox.cy}
-                                  className="fill-foreground text-3xl font-bold"
-                                >
-                                  {totalExpenseTransactions}
-                                </tspan>
-                                <tspan
-                                  x={viewBox.cx}
-                                  y={(viewBox.cy || 0) + 24}
-                                  className="fill-muted-foreground"
-                                >
-                                  Transações
-                                </tspan>
-                              </text>
-                            );
-                          }
-                        }}
-                      />
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
-                {showExpenseOthers && (
-                  <div className="w-1/2 pl-4 mt-4">
-                    <h4 className="font-semibold mb-2">Demais categorias</h4>
-                    <div className={expenseOtherCategories.length > 6 ? "max-h-32 overflow-y-auto" : ""}>
-                      <ul>
-                        {expenseOtherCategories.map(cat => (
-                          <li key={cat.name} className="text-sm mb-1">
-                            {cat.name} - {cat.transactionCount} Transações - {formatCurrency(cat.totalValue)}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="mx-auto aspect-square max-h-[250px] flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <p className="text-lg mb-2">Nenhuma despesa encontrada</p>
-                  <p className="text-sm">No período e filtros selecionados</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex-col gap-2 text-sm">
-            <div className="text-muted-foreground leading-none">
-              Mostrando o total de despesas agrupadas por categoria
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {totalExpenseTransactions} transaç{totalExpenseTransactions !== 1 ? 'ões' : 'ão'} no período
-            </div>
-          </CardFooter>
-        </Card>
-
-        <Card className="flex flex-col border-2 border-neutral-300">
-          <div className="flex justify-between items-start pr-6">
-            <CardHeader className="items-center pb-0 flex-grow">
-              <CardTitle>Receitas</CardTitle>
-              <CardDescription>
-                {filters.release_date ? (() => {
-                  const [year, month, day] = filters.release_date.split('-').map(Number);
-                  const date = new Date(year, month - 1, day);
-
-                  const firstDay = date.toLocaleString('pt-BR', { day: 'numeric' });
-                  const lastDayDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-                  const lastDay = lastDayDate.toLocaleString('pt-BR', { day: 'numeric' });
-                  const monthYear = date.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
-                  return `${firstDay} à ${lastDay} de ${monthYear}`;
-                })() : 'Todas as transações existentes'}
-              </CardDescription>
-            </CardHeader>
-            <div className="flex flex-col min-w-[200px]">
-              <label className="mb-2 text-sm font-medium text-gray-700">Organizar gráficos por:</label>
-              <Select value={incomeSortBy} onValueChange={setIncomeSortBy}>
-                <SelectTrigger className="w-56 h-8 border-2 border-neutral-300 rounded-sm text-xs">
-                  <SelectValue placeholder="Selecione organização" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Organização</SelectLabel>
-                    <SelectItem value="value">Valores</SelectItem>
-                    <SelectItem value="transactions">Quantidade de transações</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <CardContent className="flex-1 pb-0 flex items-center">
-            {incomeData.length > 0 ? (
-              <div className={`flex w-full ${showIncomeOthers ? 'ml-20' : ''}`}>
-                <ChartContainer
-                  config={incomeChartConfig}
-                  className="mx-auto aspect-square max-h-[250px] min-w-[250px]"
-                >
-                  <PieChart>
-                    <ChartTooltip
-                      cursor={false}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                              <p className="font-medium text-gray-900">{data.category}</p>
-                              <p className="text-sm text-gray-600">
-                                Valor: {formatCurrency(data.value)}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Transações: {data.transactionCount}
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Pie
-                      data={incomeData}
-                      dataKey={incomeSortBy === 'transactions' ? 'transactionCount' : 'value'}
-                      nameKey="category"
-                      innerRadius={60}
-                      strokeWidth={5}
-                      onClick={(data) => handlePieClick(data, 'income')}
-                      className="cursor-pointer"
-                    >
-                      <Label
-                        content={({ viewBox }) => {
-                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                            return (
-                              <text
-                                x={viewBox.cx}
-                                y={viewBox.cy}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                              >
-                                <tspan
-                                  x={viewBox.cx}
-                                  y={viewBox.cy}
-                                  className="fill-foreground text-3xl font-bold"
-                                >
-                                  {totalIncomeTransactions}
-                                </tspan>
-                                <tspan
-                                  x={viewBox.cx}
-                                  y={(viewBox.cy || 0) + 24}
-                                  className="fill-muted-foreground"
-                                >
-                                  Transações
-                                </tspan>
-                              </text>
-                            );
-                          }
-                        }}
-                      />
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
-                {showIncomeOthers && (
-                  <div className="w-1/2 pl-4 mt-4">
-                    <h4 className="font-semibold mb-2">Demais categorias</h4>
-                    <div className={incomeOtherCategories.length > 6 ? "max-h-32 overflow-y-auto" : ""}>
-                      <ul>
-                        {incomeOtherCategories.map(cat => (
-                          <li key={cat.name} className="text-sm mb-1">
-                            {cat.name} - {cat.transactionCount} Transações - {formatCurrency(cat.totalValue)}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="mx-auto aspect-square max-h-[250px] flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <p className="text-lg mb-2">Nenhuma receita encontrada</p>
-                  <p className="text-sm">No período e filtros selecionados</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex-col gap-2 text-sm">
-            <div className="text-muted-foreground leading-none">
-              Mostrando o total de receitas agrupadas por categoria
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {totalIncomeTransactions} transaç{totalIncomeTransactions !== 1 ? 'ões' : 'ão'} no período
-            </div>
-          </CardFooter>
-        </Card>
+    <div role="region" aria-label="Seção de gráficos e análises">
+      <div className="px-20 grid md:grid-cols-2 gap-6" style={{ minHeight: '400px' }}>
+        <ChartCard
+          title="Despesas"
+          data={chartData.expense.data}
+          totalTransactions={chartData.expense.totalTransactions}
+          otherCategories={chartData.expense.otherCategories}
+          sortBy={expenseSortBy}
+          onSortChange={setExpenseSortBy}
+          showOthers={showExpenseOthers}
+          onToggleOthers={setShowExpenseOthers}
+          onPieClick={handleExpensePieClick}
+          filters={filters}
+          formatCurrency={formatCurrency}
+          chartConfig={chartConfigs.expense}
+        />
+        
+        <ChartCard
+          title="Receitas"
+          data={chartData.income.data}
+          totalTransactions={chartData.income.totalTransactions}
+          otherCategories={chartData.income.otherCategories}
+          sortBy={incomeSortBy}
+          onSortChange={setIncomeSortBy}
+          showOthers={showIncomeOthers}
+          onToggleOthers={setShowIncomeOthers}
+          onPieClick={handleIncomePieClick}
+          filters={filters}
+          formatCurrency={formatCurrency}
+          chartConfig={chartConfigs.income}
+        />
       </div>
-      <div className="px-20 mt-10 grid md:grid-cols-2 gap-6">
+      
+      <div className="px-20 mt-10 grid md:grid-cols-2 gap-6" style={{ minHeight: '300px' }}>
         <Card className="flex flex-col border-2 border-neutral-300">
           <CardContent className="pt-6">
             <ColumnChart filters={filters} type="expense" />
@@ -462,8 +406,10 @@ const ChartsSection = ({ filters, onCategoryClick }) => {
           </CardContent>
         </Card>
       </div>
-    </>
+    </div>
   );
-};
+});
 
-export default ChartsSection;
+ChartsSection.displayName = 'ChartsSection';
+
+export default withPerformanceOptimization(ChartsSection);

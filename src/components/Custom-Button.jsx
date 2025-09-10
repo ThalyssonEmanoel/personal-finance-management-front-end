@@ -1,6 +1,6 @@
 import { memo } from 'react';
 
-const ButtonC = memo(({ texto, largura, altura, onClick, dataTest = null, type = 'button', disabled = false }) => {
+const ButtonC = memo(({ texto, largura, altura, onClick, dataTest = null, type = 'button', disabled = false, ariaLabel }) => {
   return (
     <button
       type={type}
@@ -15,7 +15,9 @@ const ButtonC = memo(({ texto, largura, altura, onClick, dataTest = null, type =
                   hover:text-white hover:shadow-md hover:bg-brown
                   duration-200
                   cursor-pointer
-                  ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`} >
+                  ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      aria-label={ariaLabel || texto}
+    >
       {texto}
     </button>
   );
