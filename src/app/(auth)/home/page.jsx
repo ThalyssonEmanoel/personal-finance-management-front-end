@@ -14,7 +14,7 @@ export default function HomePage() {
     limit: 5
   });
   const { data: accountsData, isLoading: isAccountsLoading } = useAccountsQuery();
-  const { data: transactionsData, isLoading: isTransactionsLoading } = useTransactionsQuery(filters);
+  const { data: transactionsData, isLoading: isTransactionsLoading, isError: isTransactionsError } = useTransactionsQuery(filters);
   const totalBalance = accountsData?.totalBalance ?? 0;
   const accounts = accountsData?.accounts ?? [];
   const totalIncome = transactionsData?.totalIncome ?? 0;
@@ -50,7 +50,7 @@ export default function HomePage() {
     }).format(value || 0);
   };
 
-  const isLoading = isAuthLoading() || isAccountsLoading || isTransactionsLoading;
+  const isLoading = isAuthLoading() || isAccountsLoading || (isTransactionsLoading && !isTransactionsError);
 
   if (isLoading) {
     return (

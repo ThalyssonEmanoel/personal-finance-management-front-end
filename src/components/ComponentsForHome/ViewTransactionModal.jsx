@@ -42,18 +42,36 @@ const ViewTransactionModal = ({ isOpen, onClose, transaction }) => {
           </DialogTitle>
         </DialogHeader>
         <div className="mt-4 space-y-6">
-          <div className="flex items-center bg-gray-50 rounded-lg p-4 relative overflow-hidden">
+          <div className="flex items-center bg-[rgb(250,249,244)] rounded-lg p-4 relative overflow-hidden">
             <div className={`absolute left-0 top-0 h-full w-3 ${typeColor}`} />
             <div className="ml-4 flex-grow">
               <p className="font-bold text-lg text-gray-900">{transaction.name}</p>
               <p className="text-sm text-gray-700">{typeText}</p>
             </div>
-            <p className={`text-lg font-bold ${valueColor}`}>
-              {formatCurrency(transaction.value_installment || transaction.value, transaction.type)}
-            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+            {transaction.number_installments && transaction.number_installments > 1 && (
+              <>
+                <div className="font-medium ">Valor da parcela atual</div>
+                <div className="text-right font-semibold text-gray-800">{formatCurrency(transaction.value / transaction.number_installments, transaction.type)}</div>
+
+                <div className="font-medium ">Valor total</div>
+                <div className="text-right font-semibold text-gray-800">{formatCurrency(transaction.value, transaction.type)}</div>
+
+
+                <div className="font-medium ">Total de parcelas</div>
+                <div className="text-right font-semibold text-gray-800">{transaction.number_installments}</div>
+
+                <div className="font-medium ">Parcela atual</div>
+                <div className="text-right font-semibold text-gray-800">{transaction.current_installment || 1}</div>
+              </>
+            ) || (
+              <>
+                <div className="font-medium ">Valor</div>
+                <div className={`text-right font-semibold ${valueColor}`}>{formatCurrency(transaction.value, transaction.type)}</div>
+              </>
+            )}
             <div className="font-medium ">Data da transação</div>
             <div className="text-right font-semibold text-gray-800">{formatDate(transaction.release_date)}</div>
 
@@ -66,19 +84,6 @@ const ViewTransactionModal = ({ isOpen, onClose, transaction }) => {
             <div className="font-medium ">Categoria</div>
             <div className="text-right font-semibold text-gray-800">{transaction.category}</div>
 
-            {transaction.number_installments && transaction.number_installments > 1 && (
-              <>
-
-                <div className="font-medium ">Valor total</div>
-                <div className="text-right font-semibold text-gray-800">{formatCurrency(transaction.value)}</div>
-
-                <div className="font-medium ">Total de parcelas</div>
-                <div className="text-right font-semibold text-gray-800">{transaction.number_installments}</div>
-
-                <div className="font-medium ">Parcela atual</div>
-                <div className="text-right font-semibold text-gray-800">{transaction.current_installment || 1}</div>
-              </>
-            )}
           </div>
           
           {transaction.description && (
