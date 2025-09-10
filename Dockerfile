@@ -8,8 +8,8 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
  
 # Install dependencies
-COPY package.json npm-lock.yaml* ./
-RUN corepack enable npm && npm i --frozen-lockfile
+COPY package.json package-lock.json* ./
+RUN corepack enable npm && npm ci --frozen-lockfile
  
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -20,17 +20,20 @@ COPY . .
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
-# ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
  
+# Copy environment file
+COPY .env.local ./
+
 RUN corepack enable npm && npm run build
  
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
  
-ENV NODE_ENV production
+ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
-# ENV NEXT_TELEMETRY_DISABLED 1
+# ENV NEXT_TELEMETRY_DISABLED=1
  
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -50,8 +53,8 @@ USER nextjs
  
 EXPOSE 3000
  
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 ENV NEXTAUTH_URL="https://personal-finance.app.fslab.dev"
 
 # server.js is created by next build from the standalone output

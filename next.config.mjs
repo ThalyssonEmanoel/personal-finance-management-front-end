@@ -15,7 +15,7 @@ const nextConfig = {
   
   // Otimizações de bundle
   experimental: {
-    optimizeCss: true,
+    // optimizeCss: true, // Temporariamente desabilitado para evitar erro do critters
     optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react', 'recharts'],
   },
   
