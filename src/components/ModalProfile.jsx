@@ -39,6 +39,7 @@ export function ModalProfile({ isOpen, onClose }) {
   const [passwordError, setPasswordError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [selectedFileName, setSelectedFileName] = useState('Nenhum arquivo escolhido');
 
   const { getUserInfo, updateUserInfo, authenticatedFetch } = useAuth();
   const { update } = useSession();
@@ -147,7 +148,7 @@ export function ModalProfile({ isOpen, onClose }) {
         }
 
         if (data.avatar) {
-          document.getElementById("profile-file-name").textContent = "Nenhum arquivo escolhido";
+          setSelectedFileName("Nenhum arquivo escolhido");
           profileForm.setValue('avatar', null);
         }
       }
@@ -297,7 +298,7 @@ export function ModalProfile({ isOpen, onClose }) {
                                     const file = e.target.files[0];
                                     onChange(file);
                                     const fileName = file?.name || "Nenhum arquivo escolhido";
-                                    document.getElementById("profile-file-name").textContent = fileName;
+                                    setSelectedFileName(fileName);
                                   }}
                                 />
                               </FormControl>
@@ -307,8 +308,8 @@ export function ModalProfile({ isOpen, onClose }) {
                               >
                                 Selecionar nova imagem
                               </label>
-                              <span id="profile-file-name" className="text-sm text-gray-600 -mt-2 mb-6 ml-0.5">
-                                Nenhum arquivo escolhido
+                              <span className="text-sm text-gray-600 -mt-2 mb-6 ml-0.5">
+                                {selectedFileName}
                               </span>
                             </div>
                             <FormMessage />
