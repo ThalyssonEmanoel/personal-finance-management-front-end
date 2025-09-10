@@ -22,7 +22,21 @@ export function useAccountsQuery() {
       const response = await authenticatedFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/account/${userInfo.id}?userId=${userInfo.id}`
       );
-      if (!response.ok) throw new Error('Erro ao buscar contas');
+      
+      // Se for 404, retornar dados vazios em vez de erro (usuário novo sem contas)
+      if (response.status === 404) {
+        return {
+          accounts: [],
+          totalBalance: 0,
+        };
+      }
+      
+      if (!response.ok) {
+        const error = new Error('Erro ao buscar contas');
+        error.status = response.status;
+        throw error;
+      }
+      
       const data = await response.json();
       // Retornamos apenas os dados que o componente precisa
       return {
@@ -54,7 +68,27 @@ export function useTransactionsQuery(filters) {
 
       const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParams.toString()}`;
       const response = await authenticatedFetch(url);
-      if (!response.ok) throw new Error('Erro ao buscar transações');
+      
+      // Se for 404, retornar dados vazios em vez de erro (usuário novo)
+      if (response.status === 404) {
+        return {
+          transactions: [],
+          pagination: {
+            page: currentFilters.page || 1,
+            total: 0,
+            limit: currentFilters.limit || 5,
+            total_pages: 0,
+          },
+          totalIncome: 0,
+          totalExpense: 0,
+        };
+      }
+      
+      if (!response.ok) {
+        const error = new Error('Erro ao buscar transações');
+        error.status = response.status;
+        throw error;
+      }
 
       const data = await response.json();
       if (data.error) throw new Error(data.message || 'Erro na resposta da API');
@@ -65,6 +99,7 @@ export function useTransactionsQuery(filters) {
           page: data.page || currentFilters.page || 1,
           total: data.total || 0,
           limit: data.limite || data.limit || currentFilters.limit || 5,
+          total_pages: data.total_pages || Math.ceil((data.total || 0) / (currentFilters.limit || 5)),
         },
         totalIncome: data.data?.totalIncome || 0,
         totalExpense: data.data?.totalExpense || 0,
@@ -276,6 +311,27 @@ export function useTransactionsChartQuery(filters) {
       const queryParams = new URLSearchParams({ userId: userInfo.id.toString() });
       const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParams.toString()}`;
       const PreResponse = await authenticatedFetch(url, { method: 'GET' });
+      
+      // Se for 404 na primeira requisição, retornar dados vazios
+      if (PreResponse.status === 404) {
+        return {
+          transactions: [],
+          pagination: {
+            page: 1,
+            total: 0,
+            limit: 5,
+          },
+          totalIncome: 0,
+          totalExpense: 0,
+        };
+      }
+      
+      if (!PreResponse.ok) {
+        const error = new Error('Erro ao buscar transações');
+        error.status = PreResponse.status;
+        throw error;
+      }
+      
       const data = await PreResponse.json();
 
       const queryParamsFinal = new URLSearchParams({ userId: userInfo.id.toString(), limit: data.total, page: 1 });
@@ -286,7 +342,27 @@ export function useTransactionsChartQuery(filters) {
 
       const urlFinal = `${process.env.NEXT_PUBLIC_API_URL}/transactions?${queryParamsFinal.toString()}`;
       const responseFinal = await authenticatedFetch(urlFinal);
-      if (!responseFinal.ok) throw new Error('Erro ao buscar transações');
+      
+      // Se for 404 na segunda requisição, retornar dados vazios
+      if (responseFinal.status === 404) {
+        return {
+          transactions: [],
+          pagination: {
+            page: 1,
+            total: 0,
+            limit: 5,
+          },
+          totalIncome: 0,
+          totalExpense: 0,
+        };
+      }
+      
+      if (!responseFinal.ok) {
+        const error = new Error('Erro ao buscar transações');
+        error.status = responseFinal.status;
+        throw error;
+      }
+      
       const dataFinal = await responseFinal.json();
       if (dataFinal.error) throw new Error(dataFinal.message || 'Erro na resposta da API');
 

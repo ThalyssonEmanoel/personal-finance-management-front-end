@@ -91,8 +91,10 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
 
   const { data, isLoading, isError, error } = useTransactionsQuery(queryFilters);
   const transactionsData = data?.transactions ?? [];
-  const pagination = data?.pagination ?? { total: 0, page: 1 };
+  const pagination = data?.pagination ?? { total: 0, page: 1, total_pages: 0 };
   const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteTransactionMutation();
+
+  const hasNoTransactions = !isLoading && !isError && transactionsData.length === 0;
 
   const handleTypeFilterChange = (value) => {
     setLocalFilters(prev => ({ ...prev, type: value, page: 1 }));
@@ -430,7 +432,14 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
           <div className="flex justify-between">
             <div>
               <h2 className="text-xl font-semibold mb-2">Receitas e despesas recentes</h2>
-              <p className="text-sm text-muted-foreground mb-6"> Você possui um total de {pagination.total} registros.</p>
+              <p className="text-sm text-muted-foreground mb-6">
+                {isLoading 
+                  ? "Carregando..."
+                  : isError 
+                    ? "Erro ao carregar dados"
+                    : `Você possui um total de ${pagination.total} registros.`
+                }
+              </p>
             </div>
             <div className="relative w-56">
               <Input
@@ -463,7 +472,27 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
                       Carregando transações...
                     </TableCell>
                   </TableRow>
-                ) : transactionsData.length > 0 ? (
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center text-red-600">
+                      Erro ao carregar transações. Tente novamente.
+                    </TableCell>
+                  </TableRow>
+                ) : hasNoTransactions ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <p className="text-gray-600 font-medium">Nenhuma transação encontrada</p>
+                        <p className="text-gray-400 text-sm mt-1">
+                          {pagination.total === 0 
+                            ? "Você ainda não possui transações cadastradas." 
+                            : "Nenhum resultado encontrado para os filtros aplicados."
+                          }
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
                   table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id} style={{ backgroundColor: "rgb(250, 249, 244)" }}>
                       {row.getVisibleCells().map((cell) => (
@@ -473,12 +502,6 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
                       ))}
                     </TableRow>
                   ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
-                      Nenhum resultado encontrado.
-                    </TableCell>
-                  </TableRow>
                 )}
               </TableBody>
             </Table>
