@@ -28,6 +28,16 @@ const ViewTransactionModal = ({ isOpen, onClose, transaction }) => {
     return date.toLocaleDateString("pt-BR");
   };
 
+  const getRecurringTypeLabel = (recurringType) => {
+    const labels = {
+      'daily': 'Diário',
+      'weekly': 'Semanal', 
+      'monthly': 'Mensal',
+      'yearly': 'Anual'
+    };
+    return labels[recurringType] || recurringType;
+  };
+
   const isExpense = transaction.type === 'expense';
   const typeText = isExpense ? "Despesa" : "Receita";
   const typeColor = isExpense ? 'bg-red-300' : 'bg-green-300';
@@ -83,6 +93,20 @@ const ViewTransactionModal = ({ isOpen, onClose, transaction }) => {
 
             <div className="font-medium ">Categoria</div>
             <div className="text-right font-semibold text-gray-800">{transaction.category}</div>
+
+            {transaction.recurring && (
+              <>
+                <div className="font-medium ">Transação Recorrente</div>
+                <div className="text-right font-semibold text-gray-800">Sim</div>
+                
+                {transaction.recurring_type && (
+                  <>
+                    <div className="font-medium ">Tipo de Recorrência</div>
+                    <div className="text-right font-semibold text-gray-800">{getRecurringTypeLabel(transaction.recurring_type)}</div>
+                  </>
+                )}
+              </>
+            )}
 
           </div>
           

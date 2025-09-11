@@ -155,6 +155,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
       release_date: '',
       description: '',
       recurring: false,
+      recurring_type: undefined,
       number_installments: undefined,
       accountId: undefined,
       paymentMethodId: undefined,
@@ -162,6 +163,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
   })
   
   const watchedAccountId = form.watch('accountId')
+  const watchedRecurring = form.watch('recurring')
   const currentSelectedAccount = useMemo(() => 
     accounts.find(acc => acc.id === parseInt(watchedAccountId)),
     [accounts, watchedAccountId]
@@ -214,6 +216,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
       release_date: data.release_date,
       description: data.description || '',
       recurring: data.recurring,
+      recurring_type: data.recurring_type,
       accountId: parseInt(data.accountId),
       paymentMethodId: data.paymentMethodId ? parseInt(data.paymentMethodId) : undefined,
     }
@@ -256,6 +259,13 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
   const transactionTypeOptions = useMemo(() => [
     { value: 'income', label: 'Receita' },
     { value: 'expense', label: 'Despesa' }
+  ], []);
+
+  const recurringTypeOptions = useMemo(() => [
+    { value: 'daily', label: 'Diário' },
+    { value: 'weekly', label: 'Semanal' },
+    { value: 'monthly', label: 'Mensal' },
+    { value: 'yearly', label: 'Anual' }
   ], []);
 
   const accountOptions = useMemo(() => 
@@ -533,6 +543,26 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
               <fieldset className="space-y-3">
                 <legend className="sr-only">Opções adicionais da transação</legend>
                 
+                {watchedRecurring && (
+                  <FormField
+                    control={form.control}
+                    name="recurring_type"
+                    render={({ field }) => (
+                      <FormItem className="mb-4">
+                        <FormLabel>Tipo de Recorrência</FormLabel>
+                        <AccessibleSelect
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          items={recurringTypeOptions}
+                          placeholder="Selecione a periodicidade"
+                          ariaLabel="Tipo de recorrência"
+                          className="w-full"
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="recurring"
@@ -541,19 +571,25 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                       <FormControl>
                         <Checkbox
                           checked={field.value}
-                          onCheckedChange={field.onChange}
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            if (!checked) {
+                              form.setValue('recurring_type', undefined);
+                            }
+                          }}
                           aria-describedby="recurring-help"
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel>Recorrente</FormLabel>
                         <div id="recurring-help" className="sr-only">
-                          Marque se esta transação se repete mensalmente
+                          Marque se esta transação se repete periodicamente
                         </div>
                       </div>
                     </FormItem>
                   )}
                 />
+
 
                 <div className="flex flex-row items-start space-x-3 space-y-0">
                   <Checkbox
