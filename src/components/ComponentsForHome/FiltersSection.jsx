@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
 import { ChevronDownIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Label } from "@/components/ui/label"
 import {
@@ -8,123 +7,147 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import ButtonC from '@/components/Custom-Button'
+import AccessibleButton from '@/components/AccessibleButton'
+import AccessibleSelect from '@/components/AccessibleSelect'
 import RegisterTransactionModal from './registerTransactionModal'
 import { useAccountsQuery } from '../../utils/apiClient.js';
+import { withPerformanceOptimization, useStableDimensions } from '@/hooks/usePerformanceOptimization';
 
-const FiltersSection = ({ onFiltersChange }) => {
+const FiltersSection = memo(({ onFiltersChange }) => {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(undefined);
   const [selectedAccount, setSelectedAccount] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { data: accountsData, isLoading: accountsLoading, isError, error } = useAccountsQuery();
-  const accounts = accountsData?.accounts ?? [];
   const lastFiltersRef = useRef({});
+  
+  // Hook para dimensões estáveis e prevenção de layout shift
+  const { dimensions, elementRef } = useStableDimensions({
+    minHeight: '120px' // Altura mínima para evitar layout shift
+  });
+
+  // Memoização dos dados de contas para evitar re-renders
+  const accountItems = useMemo(() => {
+    const accounts = accountsData?.accounts ?? [];
+    return [
+      { value: "All", label: "Todas as contas" },
+      ...accounts.map(account => ({
+        value: account.id.toString(),
+        label: account.name || account.nome || account.accountName || `Conta ${account.id}`
+      }))
+    ];
+  }, [accountsData]);
 
   useEffect(() => {
     const filters = {
       accountId: selectedAccount !== "All" ? selectedAccount : undefined,
       release_date: date ? date.toISOString().split('T')[0] : undefined
     };
-    if (JSON.stringify(filters) !== JSON.stringify(lastFiltersRef.current)) {
-      lastFiltersRef.current = filters;
-      if (onFiltersChange) {
-        onFiltersChange(filters);
+    
+    // Debounce para evitar muitas chamadas
+    const timeoutId = setTimeout(() => {
+      if (JSON.stringify(filters) !== JSON.stringify(lastFiltersRef.current)) {
+        lastFiltersRef.current = filters;
+        if (onFiltersChange) {
+          onFiltersChange(filters);
+        }
       }
-    }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [selectedAccount, date, onFiltersChange]);
 
+  const handleDateSelect = (selectedDate) => {
+    setDate(selectedDate);
+    setOpen(false);
+  };
+
+  const handleModalOpen = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
+
   return (
-    <div className="px-20 mt-10 flex flex-row justify-between">
+    <div 
+      ref={elementRef}
+      className="px-20 mt-10 flex flex-row justify-between"
+      style={{ minHeight: dimensions.minHeight }}
+    >
       <div className="flex flex-wrap gap-6">
+        <AccessibleSelect
+          value={selectedAccount}
+          onValueChange={setSelectedAccount}
+          label="Selecione a conta"
+          ariaLabel="Selecionar conta para filtrar transações"
+          items={accountItems}
+          loading={accountsLoading}
+          error={isError ? error : null}
+          groupLabel="Contas"
+          id="account-select"
+        />
+        
         <div className="flex flex-col">
-          <label className="mb-2 text-base font-medium text-gray-700">Selecione a conta</label>
-          <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-            <SelectTrigger className="w-56 h-10 border-2 border-neutral-300 rounded-sm">
-              <SelectValue placeholder="Todas as contas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Contas</SelectLabel>
-                <SelectItem value="All">Todas as contas</SelectItem>
-                {accountsLoading && (
-                  <SelectItem value="loading" disabled>
-                    Carregando contas...
-                  </SelectItem>
-                )}
-                {isError && !accountsLoading && (
-                  <SelectItem value="error" disabled>
-                    Erro: {error?.message || 'Erro ao carregar contas'}
-                  </SelectItem>
-                )}
-                {accounts && accounts.length > 0 && accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id.toString()}>
-                    {account.name || account.nome || account.accountName || `Conta ${account.id}`}
-                  </SelectItem>
-                ))}
-                {accounts && accounts.length === 0 && !accountsLoading && !isError && (
-                  <SelectItem value="empty" disabled>
-                    Nenhuma conta encontrada
-                  </SelectItem>
-                )}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col">
-          <Label htmlFor="date" className="mb-2 text-base font-medium text-gray-700">
+          <Label 
+            htmlFor="date-picker" 
+            className="mb-2 text-base font-medium text-gray-700"
+          >
             Data das transações
           </Label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-              <Button
+              <AccessibleButton
                 variant="outline"
-                id="date"
+                id="date-picker"
                 className="w-56 h-10 border-2 border-neutral-300 rounded-sm justify-between"
+                ariaLabel={date ? `Data selecionada: ${date.toLocaleDateString()}` : "Selecionar data das transações"}
+                ariaDescribedBy="date-help"
               >
                 {date ? date.toLocaleDateString() : "Selecionar data"}
-                <ChevronDownIcon />
-              </Button>
+                <ChevronDownIcon aria-hidden="true" />
+              </AccessibleButton>
             </PopoverTrigger>
-            <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+            <PopoverContent 
+              className="w-auto overflow-hidden p-0" 
+              align="start"
+              role="dialog"
+              aria-label="Seletor de data"
+            >
               <Calendar
                 mode="single"
                 selected={date}
                 captionLayout="dropdown"
-                onSelect={(date) => {
-                  setDate(date);
-                  setOpen(false);
-                }}
+                onSelect={handleDateSelect}
+                aria-label="Selecionar data das transações"
               />
             </PopoverContent>
           </Popover>
+          <div id="date-help" className="sr-only">
+            Selecione uma data para filtrar as transações por período específico
+          </div>
         </div>
       </div>
-      <div className="mt-8">
-        <ButtonC
-          texto="Lançar transação"
-          largura="120px"
-          altura="40px"
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-        />
+      
+      <div className="mt-6">
+        <AccessibleButton
+          className="w-[160px] h-[40px] border-2 border-neutral-300 rounded-sm bg-white hover:bg-gray-50 text-black hover:cursor-pointer hover:text-white hover:shadow-md hover:bg-brown"
+          ariaLabel="Abrir formulário para lançar nova transação"
+          onClick={handleModalOpen}
+        >
+          Lançar transação
+        </AccessibleButton>
       </div>
 
       <RegisterTransactionModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleModalClose}
       />
     </div>
   )
-}
+});
 
-export default FiltersSection;
+FiltersSection.displayName = 'FiltersSection';
+
+export default withPerformanceOptimization(FiltersSection);

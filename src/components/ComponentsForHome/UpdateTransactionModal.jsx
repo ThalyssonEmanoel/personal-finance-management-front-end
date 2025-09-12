@@ -61,6 +61,14 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
   const accounts = accountsData?.accounts ?? [];
   const categories = categoriesData ?? [];
 
+  // Opções de recorrência
+  const recurringTypeOptions = [
+    { value: 'daily', label: 'Diário' },
+    { value: 'weekly', label: 'Semanal' },
+    { value: 'monthly', label: 'Mensal' },
+    { value: 'yearly', label: 'Anual' }
+  ];
+
   const form = useForm({
     resolver: zodResolver(updateTransactionSchema),
     mode: 'onSubmit',
@@ -72,6 +80,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
       release_date: '',
       description: '',
       recurring: false,
+      recurring_type: undefined,
       number_installments: undefined,
       current_installment: undefined,
       accountId: undefined,
@@ -90,6 +99,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
         release_date: new Date(transaction.release_date).toISOString().split('T')[0],
         description: transaction.description || '', 
         // Convert null values to undefined for optional fields
+        recurring_type: transaction.recurring_type ?? undefined,
         number_installments: transaction.number_installments ?? undefined,
         current_installment: transaction.current_installment ?? undefined,
       };
@@ -100,6 +110,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
 
 
   const watchedAccountId = form.watch('accountId');
+  const watchedRecurring = form.watch('recurring');
   const currentSelectedAccount = accounts.find(acc => acc.id === parseInt(watchedAccountId));
 
   useEffect(() => {
@@ -159,6 +170,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
         release_date: data.release_date,
         description: data.description && data.description.trim() !== '' ? data.description.trim() : undefined,
         recurring: Boolean(data.recurring),
+        recurring_type: data.recurring_type,
         accountId: parseInt(data.accountId),
         paymentMethodId: data.paymentMethodId ? parseInt(data.paymentMethodId) : undefined,
       };
@@ -549,7 +561,12 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                     <FormControl>
                       <Checkbox
                         checked={field.value}
-                        onCheckedChange={field.onChange}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          if (!checked) {
+                            form.setValue('recurring_type', undefined);
+                          }
+                        }}
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
@@ -564,6 +581,33 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                   </FormItem>
                 )}
               />
+
+              {watchedRecurring && (
+                <FormField
+                  control={form.control}
+                  name="recurring_type"
+                  render={({ field }) => (
+                    <FormItem className="ml-6">
+                      <FormLabel>Tipo de Recorrência</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione a periodicidade" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {recurringTypeOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <div className="flex pt-4 flex-row justify-between">
                 <ButtonC

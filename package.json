@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "optimize-images": "next-optimized-images"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
@@ -26,16 +28,18 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "critters": "^0.0.23",
     "date-fns": "^4.1.0",
     "decimal.js": "^10.6.0",
     "lucide-react": "^0.540.0",
-    "next": "15.4.6",
+    "next": "^15.5.2",
     "next-auth": "^5.0.0-beta.29",
     "react": "19.1.0",
     "react-day-picker": "^9.9.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.62.0",
     "recharts": "^2.15.4",
+    "sharp": "^0.34.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "zod": "^4.0.17"

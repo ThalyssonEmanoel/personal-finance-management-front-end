@@ -7,6 +7,16 @@ export default withAuth(
     const isAuthPage = req.nextUrl.pathname.startsWith("/home")
     const isNoAuthPage = req.nextUrl.pathname.startsWith("/introduction")
     
+    // Cache headers for static assets
+    if (req.nextUrl.pathname.startsWith('/_next/static') || 
+        req.nextUrl.pathname.includes('.jpg') || 
+        req.nextUrl.pathname.includes('.png') || 
+        req.nextUrl.pathname.includes('.webp')) {
+      const response = NextResponse.next()
+      response.headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+      return response
+    }
+    
     // Se usuário está logado e tenta acessar página de introdução
     if (token && isNoAuthPage) {
       return NextResponse.redirect(new URL("/home", req.url))

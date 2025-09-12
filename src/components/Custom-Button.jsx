@@ -1,8 +1,6 @@
-import PropTypes from 'prop-types';
-import '../styles/globals.css';
+import { memo } from 'react';
 
-
-const ButtonC = ({ texto, largura, altura, onClick, dataTest = null, type = 'button', disabled = false }) => {
+const ButtonC = memo(({ texto, largura, altura, onClick, dataTest = null, type = 'button', disabled = false, ariaLabel }) => {
   return (
     <button
       type={type}
@@ -17,20 +15,14 @@ const ButtonC = ({ texto, largura, altura, onClick, dataTest = null, type = 'but
                   hover:text-white hover:shadow-md hover:bg-brown
                   duration-200
                   cursor-pointer
-                  ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`} >
+                  ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      aria-label={ariaLabel || texto}
+    >
       {texto}
     </button>
   );
-};
+});
 
-ButtonC.propTypes = {
-  texto: PropTypes.string.isRequired,
-  largura: PropTypes.string.isRequired,
-  altura: PropTypes.string,
-  onClick: PropTypes.func,
-  dataTest: PropTypes.string,
-  type: PropTypes.string,
-  disabled: PropTypes.bool,
-};
+ButtonC.displayName = 'ButtonC';
 
 export default ButtonC;

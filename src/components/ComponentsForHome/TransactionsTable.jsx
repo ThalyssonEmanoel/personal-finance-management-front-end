@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { MoreHorizontal, Search, Trash2, X, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,15 +33,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
@@ -51,15 +42,96 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import ButtonC from '@/components/Custom-Button';
+import AccessibleButton from '@/components/AccessibleButton';
+import AccessibleSelect from '@/components/AccessibleSelect';
 import { useTransactionsQuery, useDeleteTransactionMutation } from '../../utils/apiClient.js';
 import ReportDownloadModal from './ReportDonwloadModal';
 import UpdateTransactionModal from './UpdateTransactionModal';
 import ViewTransactionModal from './ViewTransactionModal';
+import { withPerformanceOptimization, useStableDimensions } from '@/hooks/usePerformanceOptimization';
 import Decimal from 'decimal.js';
 
 const ITEMS_PER_PAGE = 5;
 
-const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange }) => {
+// Componente de célula otimizado para ações
+const ActionCell = memo(({ transaction, onView, onEdit, onDelete }) => (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <AccessibleButton 
+        variant="ghost" 
+        className="h-8 w-8 p-0"
+        ariaLabel={`Ações para transação ${transaction.name}`}
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </AccessibleButton>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent 
+      align="end"
+      role="menu"
+      aria-label="Menu de ações da transação"
+    >
+      <DropdownMenuLabel>Ações</DropdownMenuLabel>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        onClick={() => onView(transaction)}
+        role="menuitem"
+      >
+        Visualizar
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={() => onEdit(transaction)}
+        role="menuitem"
+      >
+        Editar
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={() => onDelete(transaction)}
+        className="text-red-600 focus:text-red-600"
+        role="menuitem"
+      >
+        Excluir
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+));
+
+ActionCell.displayName = 'ActionCell';
+
+// Componente de cabeçalho de coluna otimizado
+const SortableHeader = memo(({ children, column, className = "" }) => (
+  <div 
+    className={`flex items-center cursor-pointer hover:text-gray-600 ${className}`}
+    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    role="button"
+    tabIndex={0}
+    aria-label={`Ordenar por ${children} ${
+      column.getIsSorted() === "asc" ? "(crescente)" : 
+      column.getIsSorted() === "desc" ? "(decrescente)" : ""
+    }`}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        column.toggleSorting(column.getIsSorted() === "asc");
+      }
+    }}
+  >
+    {children}
+    <div className="ml-1 flex flex-col">
+      <ChevronUp 
+        className={`h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`}
+        aria-hidden="true"
+      />
+      <ChevronDown 
+        className={`h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`}
+        aria-hidden="true"
+      />
+    </div>
+  </div>
+));
+
+SortableHeader.displayName = 'SortableHeader';
+
+const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionChange }) => {
   const [localFilters, setLocalFilters] = useState({
     page: 1,
     limit: ITEMS_PER_PAGE,
@@ -74,16 +146,38 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
   const [transactionToEdit, setTransactionToEdit] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [transactionToView, setTransactionToView] = useState(null);
-  const handleViewClick = (transaction) => {
+
+  const { dimensions, elementRef } = useStableDimensions({
+    minHeight: '400px'
+  });
+
+  // Callbacks otimizados
+  const handleViewClick = useCallback((transaction) => {
     setTransactionToView(transaction);
     setIsViewModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseViewModal = () => {
+  const handleCloseViewModal = useCallback(() => {
     setIsViewModalOpen(false);
     setTransactionToView(null);
-  };
+  }, []);
 
+  const handleEditClick = useCallback((transaction) => {
+    setTransactionToEdit(transaction);
+    setIsEditModalOpen(true);
+  }, []);
+
+  const handleCloseEditModal = useCallback(() => {
+    setIsEditModalOpen(false);
+    setTransactionToEdit(null);
+  }, []);
+
+  const handleDeleteClick = useCallback((transaction) => {
+    setTransactionToDelete(transaction);
+    setIsDeleteModalOpen(true);
+  }, []);
+
+  // Memoização dos filtros da query
   const queryFilters = useMemo(() => ({
     ...externalFilters,
     ...localFilters,
@@ -94,30 +188,15 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
   const pagination = data?.pagination ?? { total: 0, page: 1 };
   const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteTransactionMutation();
 
-  const handleTypeFilterChange = (value) => {
+  const handleTypeFilterChange = useCallback((value) => {
     setLocalFilters(prev => ({ ...prev, type: value, page: 1 }));
-  };
+  }, []);
 
-  const goToPage = (page) => {
+  const goToPage = useCallback((page) => {
     setLocalFilters(prev => ({ ...prev, page }));
-  };
+  }, []);
 
-  const handleDeleteClick = (transaction) => {
-    setTransactionToDelete(transaction);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleEditClick = (transaction) => {
-    setTransactionToEdit(transaction);
-    setIsEditModalOpen(true);
-  };
-
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-    setTransactionToEdit(null);
-  };
-
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = useCallback(() => {
     if (!transactionToDelete) return;
 
     deleteTransaction(transactionToDelete.id, {
@@ -130,14 +209,14 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
         console.error('Erro ao deletar transação:', err);
       }
     });
-  };
+  }, [transactionToDelete, deleteTransaction, onTransactionChange]);
 
-  const handleCancelDelete = () => {
+  const handleCancelDelete = useCallback(() => {
     setIsDeleteModalOpen(false);
     setTransactionToDelete(null);
-  };
+  }, []);
 
-  const getDeleteMessage = (transaction) => {
+  const getDeleteMessage = useCallback((transaction) => {
     if (transaction?.number_installments && transaction.number_installments > 1) {
       return "Atenção! Caso exclua essa transação não haverá o lançamento automatico da próxima parcela.";
     }
@@ -145,8 +224,9 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
       return "Atenção! Caso exclua essa transação não haverá mais o lançamento recorrente dela.";
     }
     return "Você tem certeza que deseja apagar essa transação?";
-  };
+  }, []);
 
+  // Memoização do filtro de transações
   const filteredTransactions = useMemo(() => {
     if (!searchTerm) return transactionsData;
     return transactionsData.filter(transaction =>
@@ -156,33 +236,26 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
     );
   }, [transactionsData, searchTerm]);
 
-  const columns = [
+  // Memoização das colunas da tabela
+  const columns = useMemo(() => [
     {
       accessorKey: "type",
-      header: ({ column }) => {
-        return React.createElement("div", { 
-          className: "flex items-center cursor-pointer hover:text-gray-600",
-          onClick: () => column.toggleSorting(column.getIsSorted() === "asc")
-        },
-          "Tipo",
-          React.createElement("div", { className: "ml-1 flex flex-col" },
-            React.createElement(ChevronUp, { 
-              className: `h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`
-            }),
-            React.createElement(ChevronDown, { 
-              className: `h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`
-            })
-          )
-        );
-      },
+      header: ({ column }) => (
+        <SortableHeader column={column}>Tipo</SortableHeader>
+      ),
       cell: ({ row }) => {
         const type = row.original.type;
         const tipoTexto = type === "income" ? "receita" : "despesa";
-        return React.createElement("div", { className: "flex items-center relative -ml-4 -mt-3 -mb-3" },
-          React.createElement("div", {
-            className: `w-3 h-20 rounded-l-md ${type === "income" ? "bg-green-300" : "bg-red-300"}`
-          }),
-          React.createElement("span", { className: "pl-4 capitalize" }, tipoTexto)
+        return (
+          <div className="flex items-center relative -ml-4 -mt-3 -mb-3">
+            <div
+              className={`w-3 h-20 rounded-l-md ${
+                type === "income" ? "bg-green-300" : "bg-red-300"
+              }`}
+              aria-hidden="true"
+            />
+            <span className="pl-4 capitalize">{tipoTexto}</span>
+          </div>
         );
       },
       sortingFn: (rowA, rowB) => {
@@ -193,89 +266,37 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
     },
     {
       accessorKey: "name",
-      header: ({ column }) => {
-        return React.createElement("div", { 
-          className: "flex items-center cursor-pointer hover:text-gray-600",
-          onClick: () => column.toggleSorting(column.getIsSorted() === "asc")
-        },
-          "Nome",
-          React.createElement("div", { className: "ml-1 flex flex-col" },
-            React.createElement(ChevronUp, { 
-              className: `h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`
-            }),
-            React.createElement(ChevronDown, { 
-              className: `h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`
-            })
-          )
-        );
-      },
-      cell: ({ row }) => React.createElement("div", null, row.getValue("name")),
+      header: ({ column }) => (
+        <SortableHeader column={column}>Nome</SortableHeader>
+      ),
+      cell: ({ row }) => <div>{row.getValue("name")}</div>,
     },
     {
       accessorKey: "category",
-      header: ({ column }) => {
-        return React.createElement("div", { 
-          className: "flex items-center cursor-pointer hover:text-gray-600",
-          onClick: () => column.toggleSorting(column.getIsSorted() === "asc")
-        },
-          "Categoria",
-          React.createElement("div", { className: "ml-1 flex flex-col" },
-            React.createElement(ChevronUp, { 
-              className: `h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`
-            }),
-            React.createElement(ChevronDown, { 
-              className: `h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`
-            })
-          )
-        );
-      },
-      cell: ({ row }) => React.createElement("div", null, row.getValue("category")),
+      header: ({ column }) => (
+        <SortableHeader column={column}>Categoria</SortableHeader>
+      ),
+      cell: ({ row }) => <div>{row.getValue("category")}</div>,
     },
     {
       accessorKey: "account",
-      header: ({ column }) => {
-        return React.createElement("div", { 
-          className: "flex items-center cursor-pointer hover:text-gray-600",
-          onClick: () => column.toggleSorting(column.getIsSorted() === "asc")
-        },
-          "Conta",
-          React.createElement("div", { className: "ml-1 flex flex-col" },
-            React.createElement(ChevronUp, { 
-              className: `h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`
-            }),
-            React.createElement(ChevronDown, { 
-              className: `h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`
-            })
-          )
-        );
-      },
-      cell: ({ row }) => React.createElement("div", null, row.original.account?.name || "N/A"),
+      header: ({ column }) => (
+        <SortableHeader column={column}>Conta</SortableHeader>
+      ),
+      cell: ({ row }) => <div>{row.original.account?.name || "N/A"}</div>,
       accessorFn: (row) => row.account?.name || "N/A",
     },
     {
       accessorKey: "release_date",
-      header: ({ column }) => {
-        return React.createElement("div", { 
-          className: "flex items-center cursor-pointer hover:text-gray-600",
-          onClick: () => column.toggleSorting(column.getIsSorted() === "asc")
-        },
-          "Data",
-          React.createElement("div", { className: "ml-1 flex flex-col" },
-            React.createElement(ChevronUp, { 
-              className: `h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`
-            }),
-            React.createElement(ChevronDown, { 
-              className: `h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`
-            })
-          )
-        );
-      },
+      header: ({ column }) => (
+        <SortableHeader column={column}>Data</SortableHeader>
+      ),
       cell: ({ row }) => {
         const date = new Date(row.getValue("release_date"));
         //Somar 1 dia, pois o componente está puxando um dia anterior
         date.setDate(date.getDate() + 1);
         const formatted = date.toLocaleDateString("pt-BR");
-        return React.createElement("div", null, formatted);
+        return <div>{formatted}</div>;
       },
       sortingFn: (rowA, rowB) => {
         const dateA = new Date(rowA.original.release_date);
@@ -285,22 +306,9 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
     },
     {
       accessorKey: "value",
-      header: ({ column }) => {
-        return React.createElement("div", { 
-          className: "flex items-center cursor-pointer hover:text-gray-600",
-          onClick: () => column.toggleSorting(column.getIsSorted() === "asc")
-        },
-          "Valor(R$)",
-          React.createElement("div", { className: "ml-1 flex flex-col" },
-            React.createElement(ChevronUp, { 
-              className: `h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`
-            }),
-            React.createElement(ChevronDown, { 
-              className: `h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`
-            })
-          )
-        );
-      },
+      header: ({ column }) => (
+        <SortableHeader column={column}>Valor(R$)</SortableHeader>
+      ),
       cell: ({ row }) => {
         const value = new Decimal(row.original.value_installment || row.original.value).toNumber();
         const type = row.original.type;
@@ -311,9 +319,11 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
           currency: "BRL",
         }).format(Math.abs(value));
 
-        return React.createElement("div", {
-          className: isNegative ? "text-red-600 font-bold" : "text-green-600 font-bold"
-        }, isNegative ? `- ${formatted}` : `+ ${formatted}`);
+        return (
+          <div className={isNegative ? "text-red-600 font-bold" : "text-green-600 font-bold"}>
+            {isNegative ? `- ${formatted}` : `+ ${formatted}`}
+          </div>
+        );
       },
       sortingFn: (rowA, rowB) => {
         const valueA = new Decimal(rowA.original.value_installment || rowA.original.value).toNumber();
@@ -331,33 +341,17 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
     {
       id: "actions",
       enableHiding: false,
-      cell: ({ row }) => {
-        const transaction = row.original;
-        return React.createElement(DropdownMenu, null,
-          React.createElement(DropdownMenuTrigger, { asChild: true },
-            React.createElement(Button, { variant: "ghost", className: "h-8 w-8 p-0" },
-              React.createElement("span", { className: "sr-only" }, "Abrir menu"),
-              React.createElement(MoreHorizontal)
-            )
-          ),
-          React.createElement(DropdownMenuContent, { align: "end" },
-            React.createElement(DropdownMenuLabel, null, "Ações"),
-            React.createElement(DropdownMenuSeparator),
-            React.createElement(DropdownMenuItem, {
-              onClick: () => handleViewClick(transaction)
-            }, "Visualizar"),
-            React.createElement(DropdownMenuItem, {
-              onClick: () => handleEditClick(transaction)
-            }, "Editar"),
-            React.createElement(DropdownMenuItem, {
-              onClick: () => handleDeleteClick(transaction),
-              className: "text-red-600 focus:text-red-600"
-            }, "Excluir")
-          )
-        );
-      },
+      header: () => <span className="sr-only">Ações</span>,
+      cell: ({ row }) => (
+        <ActionCell
+          transaction={row.original}
+          onView={handleViewClick}
+          onEdit={handleEditClick}
+          onDelete={handleDeleteClick}
+        />
+      ),
     },
-  ];
+  ], [handleViewClick, handleEditClick, handleDeleteClick]);
 
   const table = useReactTable({
     data: filteredTransactions,
@@ -380,77 +374,111 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
   const totalPages = Math.ceil(pagination.total / ITEMS_PER_PAGE);
   const currentPage = localFilters.page;
 
-  const getVisiblePages = () => {
-    const visiblePages = [];
+  // Memoização das páginas visíveis
+  const visiblePages = useMemo(() => {
+    const pages = [];
     const maxVisiblePages = 3;
 
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
-        visiblePages.push(i);
+        pages.push(i);
       }
     } else {
       if (currentPage <= 2) {
-        visiblePages.push(1, 2, 3);
+        pages.push(1, 2, 3);
       } else if (currentPage >= totalPages - 1) {
-        visiblePages.push(totalPages - 2, totalPages - 1, totalPages);
+        pages.push(totalPages - 2, totalPages - 1, totalPages);
       } else {
-        visiblePages.push(currentPage - 1, currentPage, currentPage + 1);
+        pages.push(currentPage - 1, currentPage, currentPage + 1);
       }
     }
-    return visiblePages;
-  };
+    return pages;
+  }, [totalPages, currentPage]);
+
+  const typeOptions = [
+    { value: 'All', label: 'Todas as transações' },
+    { value: 'income', label: 'Receita' },
+    { value: 'expense', label: 'Despesa' }
+  ];
 
   return (
-    <div>
+    <div 
+      ref={elementRef}
+      style={{ minHeight: dimensions.minHeight }}
+      role="region"
+      aria-label="Tabela de transações"
+    >
       <div className="flex items-end justify-between mb-6">
         <div className="flex gap-6">
           <div>
-            <label className="mb-2 text-base font-medium text-gray-700">Tipo de transação</label>
-            <Select value={localFilters.type} onValueChange={handleTypeFilterChange}>
-              <SelectTrigger className="w-56 h-10 border-2 border-neutral-300 rounded-sm">
-                <SelectValue placeholder="Receita e despesa" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Tipo de transação</SelectLabel>
-                  <SelectItem value="All">Todas as transações</SelectItem>
-                  <SelectItem value="income">Receita</SelectItem>
-                  <SelectItem value="expense">Despesa</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <AccessibleSelect
+              value={localFilters.type}
+              onValueChange={handleTypeFilterChange}
+              label="Tipo de transação"
+              ariaLabel="Filtrar por tipo de transação"
+              items={typeOptions}
+              className="w-56 h-10 border-2 border-neutral-300 rounded-sm"
+            />
           </div>
         </div>
         <div className='mt-6'>
-          <ButtonC texto="Baixar extrato" largura="120px" altura="40px" type="button" onClick={() => setIsReportModalOpen(true)} />
+          <ButtonC 
+            texto="Baixar extrato" 
+            largura="120px" 
+            altura="40px" 
+            type="button" 
+            onClick={() => setIsReportModalOpen(true)} 
+          />
         </div>
       </div>
+      
       <div className="border-2 border-neutral-300 rounded-md h-165">
         <div className="px-8 py-8">
           <div className="flex justify-between">
             <div>
               <h2 className="text-xl font-semibold mb-2">Receitas e despesas recentes</h2>
-              <p className="text-sm text-muted-foreground mb-6"> Você possui um total de {pagination.total} registros.</p>
+              <p className="text-sm text-muted-foreground mb-6">
+                Você possui um total de {pagination.total} registros.
+              </p>
             </div>
             <div className="relative w-56">
+              <label htmlFor="search-transactions" className="sr-only">
+                Buscar transações
+              </label>
               <Input
+                id="search-transactions"
                 type="text"
                 placeholder="Ex.: Supermercado"
                 className="border-2 border-neutral-300 rounded-md w-56 h-10 pr-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                aria-describedby="search-help"
               />
-              <Search className="absolute right-3 top-5 -translate-y-1/2 text-gray-300 w-5 h-5 pointer-events-none" />
+              <Search 
+                className="absolute right-3 top-5 -translate-y-1/2 text-gray-300 w-5 h-5 pointer-events-none" 
+                aria-hidden="true"
+              />
+              <div id="search-help" className="sr-only">
+                Digite para filtrar transações por qualquer campo
+              </div>
             </div>
           </div>
+          
           <div className="overflow-hidden rounded-md">
-            <Table>
+            <Table 
+              role="table" 
+              aria-label="Lista de transações"
+              aria-rowcount={filteredTransactions.length + 1}
+            >
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
+                  <TableRow key={headerGroup.id} role="row">
                     {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      <TableHead key={header.id} role="columnheader">
+                        {header.isPlaceholder 
+                          ? null 
+                          : flexRender(header.column.columnDef.header, header.getContext())
+                        }
                       </TableHead>
                     ))}
                   </TableRow>
@@ -459,15 +487,24 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                    <TableCell 
+                      colSpan={columns.length} 
+                      className="h-24 text-center"
+                      role="status"
+                      aria-live="polite"
+                    >
                       Carregando transações...
                     </TableCell>
                   </TableRow>
                 ) : transactionsData.length > 0 ? (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} style={{ backgroundColor: "rgb(250, 249, 244)" }}>
+                    <TableRow 
+                      key={row.id} 
+                      style={{ backgroundColor: "rgb(250, 249, 244)" }}
+                      role="row"
+                    >
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                        <TableCell key={cell.id} role="gridcell">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                       ))}
@@ -475,7 +512,12 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                    <TableCell 
+                      colSpan={columns.length} 
+                      className="h-24 text-center"
+                      role="status"
+                      aria-live="polite"
+                    >
                       Nenhum resultado encontrado.
                     </TableCell>
                   </TableRow>
@@ -487,22 +529,29 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
       </div>
       
       {totalPages > 1 && (
-        <div className="mt-6 flex justify-center">
+        <nav 
+          className="mt-6 flex justify-center"
+          aria-label="Navegação de páginas"
+        >
           <Pagination>
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
                   onClick={() => goToPage(currentPage - 1)}
                   className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  aria-disabled={currentPage === 1}
+                  aria-label="Página anterior"
                 />
               </PaginationItem>
               
-              {getVisiblePages().map((page) => (
+              {visiblePages.map((page) => (
                 <PaginationItem key={page}>
                   <PaginationLink
                     onClick={() => goToPage(page)}
                     isActive={currentPage === page}
                     className="cursor-pointer"
+                    aria-label={`Página ${page}`}
+                    aria-current={currentPage === page ? "page" : undefined}
                   >
                     {page}
                   </PaginationLink>
@@ -511,7 +560,7 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
               
               {totalPages > 3 && currentPage < totalPages - 1 && (
                 <PaginationItem>
-                  <PaginationEllipsis />
+                  <PaginationEllipsis aria-label="Mais páginas" />
                 </PaginationItem>
               )}
 
@@ -519,11 +568,13 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
                 <PaginationNext
                   onClick={() => goToPage(currentPage + 1)}
                   className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  aria-disabled={currentPage === totalPages}
+                  aria-label="Próxima página"
                 />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
-        </div>
+        </nav>
       )}
 
       <ReportDownloadModal
@@ -537,31 +588,37 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
         transaction={transactionToView}
       />
 
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+      <Dialog 
+        open={isDeleteModalOpen} 
+        onOpenChange={setIsDeleteModalOpen}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
         <DialogContent className="sm:max-w-md" showCloseButton={false}>
           <div className="flex justify-end">
-            <Button
+            <AccessibleButton
               variant="ghost"
               size="sm"
               onClick={handleCancelDelete}
+              ariaLabel="Fechar modal de exclusão"
               className="h-6 w-6 p-0"
             >
               <X className="h-4 w-4" />
-            </Button>
+            </AccessibleButton>
           </div>
           
           <div className="flex flex-col items-center text-center">
             <div className="mt-4 mb-6">
-              <Trash2 className="h-16 w-16 text-neutral-300 mx-auto" />
+              <Trash2 className="h-16 w-16 text-neutral-300 mx-auto" aria-hidden="true" />
             </div>
             
             <DialogHeader className="mb-6">
-              <DialogTitle className="text-lg font-semibold">
+              <DialogTitle id="delete-dialog-title" className="text-lg font-semibold">
                 Excluir Transação
               </DialogTitle>
             </DialogHeader>
 
-            <p className="mb-6 text-sm leading-relaxed">
+            <p id="delete-dialog-description" className="mb-6 text-sm leading-relaxed">
               {transactionToDelete && getDeleteMessage(transactionToDelete)}
             </p>
 
@@ -594,6 +651,9 @@ const TransactionsTable = ({ filters: externalFilters = {}, onTransactionChange 
       />
     </div>
   );
-};
+});
 
-export default TransactionsTable;
+TransactionsTable.displayName = 'TransactionsTable';
+
+export default withPerformanceOptimization(TransactionsTable);
+

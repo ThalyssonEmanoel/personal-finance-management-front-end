@@ -1,9 +1,12 @@
 'use client'
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import Header from "@/components/nav-menu";
-import { ModalLogin } from "@/components/Auth/ModalLogin";
-import { ModalForgotPassword } from "@/components/Auth/ModalForgotPassword";
-import { ModalChangePassword } from "@/components/Auth/ModalChangePassword";
+import OptimizedImage from "@/components/OptimizedImage";
+
+// Lazy loading dos modais para reduzir JavaScript inicial
+const ModalLogin = lazy(() => import("@/components/Auth/ModalLogin").then(module => ({ default: module.ModalLogin })));
+const ModalForgotPassword = lazy(() => import("@/components/Auth/ModalForgotPassword").then(module => ({ default: module.ModalForgotPassword })));
+const ModalChangePassword = lazy(() => import("@/components/Auth/ModalChangePassword").then(module => ({ default: module.ModalChangePassword })));
 
 export default function IntroductionPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,7 +47,16 @@ export default function IntroductionPage() {
       <Header onLoginClick={handleLoginClick} />
       <div className="px-10 md:px-20 lg:px-40 mt-16 space-y-16 mx-8">
         <section className="flex flex-col lg:flex-row items-start gap-12 justify-between">
-          <img src="/Imagem1Introdução.jpg" alt="Financial Record" className="rounded-lg shadow-lg max-w-full sm:max-w-2xl" />
+          {/* Imagem LCP otimizada com priority */}
+          <OptimizedImage 
+            src="/Imagem1Introdução.jpg" 
+            alt="Financial Record" 
+            width={640}
+            height={480}
+            priority={true}
+            className="rounded-lg shadow-lg max-w-full sm:max-w-2xl"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 640px"
+          />
           <div className="space-y-4 max-w-2xl">
             <h1 className="text-4xl font-bold text-gray-900">Financial Record</h1>
             <h2 className="text-2xl font-medium text-gray-700">Organize sua vida financeira de forma prática e segura.</h2>
@@ -57,7 +69,16 @@ export default function IntroductionPage() {
         </section>
 
         <section className="flex justify-between flex-col lg:flex-row-reverse items-start gap-12">
-          <img src="/AnotandoGastos.jpg" alt="Como funciona" className="rounded-lg shadow-lg h-[382px] w-full sm:max-w-2xl" />
+          {/* Segunda imagem com lazy loading inteligente */}
+          <OptimizedImage 
+            src="/AnotandoGastos.jpg" 
+            alt="Como funciona" 
+            width={640}
+            height={382}
+            priority={false}
+            className="rounded-lg shadow-lg h-[382px] w-full sm:max-w-2xl"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 640px"
+          />
           <div className="space-y-4 max-w-2xl">
             <h2 className="text-3xl font-bold text-gray-900">Como funciona</h2>
             <h3 className="text-xl font-medium text-gray-700">Registre, acompanhe e visualize</h3>
@@ -103,21 +124,37 @@ export default function IntroductionPage() {
           </div>
         </section>
       </div>
-      <ModalLogin
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onForgotPassword={handleForgotPassword}
-      />
-      <ModalForgotPassword
-        isOpen={isForgotPasswordOpen}
-        onClose={handleCloseForgotPassword}
-        onSendCode={handleSendCode}
-      />
-      <ModalChangePassword
-        isOpen={isChangePasswordOpen}
-        onClose={handleCloseChangePassword}
-        email={userEmail}
-      />
+      
+      {/* Lazy loading dos modais com Suspense */}
+      <Suspense fallback={null}>
+        {isModalOpen && (
+          <ModalLogin
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+            onForgotPassword={handleForgotPassword}
+          />
+        )}
+      </Suspense>
+      
+      <Suspense fallback={null}>
+        {isForgotPasswordOpen && (
+          <ModalForgotPassword
+            isOpen={isForgotPasswordOpen}
+            onClose={handleCloseForgotPassword}
+            onSendCode={handleSendCode}
+          />
+        )}
+      </Suspense>
+      
+      <Suspense fallback={null}>
+        {isChangePasswordOpen && (
+          <ModalChangePassword
+            isOpen={isChangePasswordOpen}
+            onClose={handleCloseChangePassword}
+            email={userEmail}
+          />
+        )}
+      </Suspense>
     </>
   );
 }

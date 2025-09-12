@@ -60,10 +60,8 @@ const AuthenticatedHeader = () => {
 
   return (
     <nav className="bg-secondary border-b-2 border-solid border-b-tertiary flex justify-between items-center w-full py-4 px-20">
-      <div className="flex items-center">
-        <Link href="/introduction" className="text-black text-3xl font-semibold">
+      <div className="flex items-center text-black text-3xl font-semibold">
           Financial Record
-        </Link>
       </div>
 
       <div className="flex items-center space-x-8">

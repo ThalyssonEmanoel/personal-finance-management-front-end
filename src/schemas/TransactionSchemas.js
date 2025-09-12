@@ -20,6 +20,9 @@ export const createTransactionSchema = z.object({
     .optional(),
   recurring: z.boolean()
     .default(false),
+  recurring_type: z.enum(["daily", "weekly", "monthly", "yearly"], {
+    message: "O tipo de recorrência deve ser diário, semanal, mensal ou anual."
+  }).optional(),
   number_installments: z.number()
     .int("O número de parcelas deve ser um número inteiro.")
     .min(2, "O número mínimo de parcelas é 2.")
@@ -33,6 +36,15 @@ export const createTransactionSchema = z.object({
     .int("A forma de pagamento deve ser um número inteiro.")
     .positive("A forma de pagamento é obrigatória.")
     .optional(),
+}).refine((data) => {
+  // Se recurring for true, recurring_type deve ser obrigatório
+  if (data.recurring && !data.recurring_type) {
+    return false;
+  }
+  return true;
+}, {
+  message: "O tipo de recorrência é obrigatório quando a transação é recorrente.",
+  path: ["recurring_type"],
 });
 
 export const updateTransactionSchema = z.object({
@@ -56,6 +68,9 @@ export const updateTransactionSchema = z.object({
     .optional(),
   recurring: z.boolean()
     .default(false).optional(),
+  recurring_type: z.enum(["daily", "weekly", "monthly", "yearly"], {
+    message: "O tipo de recorrência deve ser diário, semanal, mensal ou anual."
+  }).optional(),
   number_installments: z.number()
     .int("Número de parcelas deve ser um número inteiro")
     .min(2, "Número mínimo de parcelas é 2")
@@ -72,4 +87,13 @@ export const updateTransactionSchema = z.object({
     .int("Forma de pagamento deve ser um número inteiro")
     .positive("Forma de pagamento é obrigatória")
     .optional()
+}).refine((data) => {
+  // Se recurring for true, recurring_type deve ser obrigatório
+  if (data.recurring && !data.recurring_type) {
+    return false;
+  }
+  return true;
+}, {
+  message: "O tipo de recorrência é obrigatório quando a transação é recorrente.",
+  path: ["recurring_type"],
 });

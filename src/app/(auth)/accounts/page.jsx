@@ -1,7 +1,6 @@
 'use client'
+import React, { useState, Suspense, memo } from "react"
 import { useAuth } from "@/hooks/useAuth"
-import { useState } from "react"
-import { AccountsTable, RegisterAccountModal } from "@/components/ComponentsForAccounts"
 import { Progress } from "@/components/ui/progress"
 import ButtonC from "@/components/Custom-Button"
 import {
@@ -13,6 +12,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+
+// Lazy loading para reduzir JavaScript inicial
+const AccountsTable = React.lazy(() => import("@/components/ComponentsForAccounts/AccountsTable"));
+const RegisterAccountModal = React.lazy(() => import("@/components/ComponentsForAccounts/RegisterAccountModal"));
+
+// Loading fallback otimizado
+const LoadingFallback = memo(() => (
+  <div 
+    className="flex flex-col items-center justify-center"
+    style={{ minHeight: '400px' }}
+  >
+    <span className="text-lg mb-4">Carregando...</span>
+    <Progress value={100} className="w-[20%]" />
+  </div>
+));
+
+LoadingFallback.displayName = 'LoadingFallback';
 
 export default function AccountsPage() {
   const { isLoading: isAuthLoading } = useAuth();
@@ -55,9 +71,13 @@ export default function AccountsPage() {
     <div className="px-20 mt-10 mb-10">
       <div className="flex justify-between items-center mb-6">
         <div className="flex flex-col">
-          <label className="mb-2 text-base font-medium text-gray-700">Listar</label>
+          <label htmlFor="account-filter" className="mb-2 text-base font-medium text-gray-700">Listar</label>
           <Select>
-            <SelectTrigger className="w-56 h-10 border-2 border-neutral-300 rounded-sm">
+            <SelectTrigger 
+              id="account-filter"
+              className="w-56 h-10 border-2 border-neutral-300 rounded-sm"
+              aria-label="Filtrar por tipo de conta ou transferência"
+            >
               <SelectValue placeholder="Todas as contas" />
             </SelectTrigger>
             <SelectContent>
@@ -78,12 +98,16 @@ export default function AccountsPage() {
           />
         </div>
       </div>
-      <AccountsTable onAccountChange={handleAccountChange} />
+      <Suspense fallback={<LoadingFallback />}>
+        <AccountsTable onAccountChange={handleAccountChange} />
+      </Suspense>
       
-      <RegisterAccountModal 
-        isOpen={isModalOpen} 
-        onClose={handleCloseModal} 
-      />
+      <Suspense fallback={null}>
+        <RegisterAccountModal 
+          isOpen={isModalOpen} 
+          onClose={handleCloseModal} 
+        />
+      </Suspense>
     </div>
   );
 }
