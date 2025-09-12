@@ -720,3 +720,159 @@ export function useAccountTypesQuery() {
     staleTime: 1000 * 60 * 5,
   });
 }
+
+// Bank Transfer Queries and Mutations
+export function useBankTransfersQuery(filters) {
+  const { authenticatedFetch, getUserInfo, enabled } = useApi();
+
+  return useQuery({
+    queryKey: ['bank-transfers', filters],
+    queryFn: async ({ queryKey }) => {
+      const [_key, currentFilters] = queryKey;
+      const userInfo = getUserInfo();
+      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() });
+
+      if (currentFilters?.sourceAccountId && currentFilters.sourceAccountId !== 'All') {
+        queryParams.append('sourceAccountId', currentFilters.sourceAccountId);
+      }
+      if (currentFilters?.destinationAccountId && currentFilters.destinationAccountId !== 'All') {
+        queryParams.append('destinationAccountId', currentFilters.destinationAccountId);
+      }
+      if (currentFilters?.amount) {
+        queryParams.append('amount', currentFilters.amount);
+      }
+      if (currentFilters?.transfer_date) {
+        queryParams.append('transfer_date', currentFilters.transfer_date);
+      }
+      if (currentFilters?.paymentMethodId && currentFilters.paymentMethodId !== 'All') {
+        queryParams.append('paymentMethodId', currentFilters.paymentMethodId);
+      }
+      if (currentFilters?.limit && currentFilters.limit !== undefined) {
+        queryParams.append('limit', currentFilters.limit);
+      }
+      if (currentFilters?.page && currentFilters.page !== undefined) {
+        queryParams.append('page', currentFilters.page);
+      }
+
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/BankTransfer?${queryParams.toString()}`;
+      const response = await authenticatedFetch(url);
+      
+      if (response.status === 404) {
+        return {
+          transfers: [],
+          pagination: {
+            page: currentFilters?.page || 1,
+            total: 0,
+            limit: currentFilters?.limit || 10,
+          },
+        };
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.message || 'Erro ao buscar transferências');
+      }
+
+      return {
+        transfers: data.data || [],
+        pagination: {
+          page: data.page || currentFilters?.page || 1,
+          total: data.total || 0,
+          limit: data.limite || data.limit || currentFilters?.limit || 10,
+        },
+      };
+    },
+    placeholderData: (previousData) => previousData,
+    enabled: enabled,
+    retry: (failureCount, error) => {
+      // Não tenta novamente para erros 404 (usuário sem transferências)
+      if (error?.message?.includes('404')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+  });
+}
+
+export function useCreateBankTransferMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (transferData) => {
+      const userInfo = getUserInfo();
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/BankTransfer?userId=${userInfo.id}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(transferData),
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bank-transfers'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+}
+
+export function useUpdateBankTransferMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ transferId, transferData }) => {
+      const userInfo = getUserInfo();
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/BankTransfer/{id}?id=${transferId}&userId=${userInfo.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(transferData),
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bank-transfers'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+}
+
+export function useDeleteBankTransferMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (transferId) => {
+      const userInfo = getUserInfo();
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/BankTransfer/{id}?id=${transferId}&userId=${userInfo.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bank-transfers'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+}

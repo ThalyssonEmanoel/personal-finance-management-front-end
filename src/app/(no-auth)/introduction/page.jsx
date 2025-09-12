@@ -69,7 +69,6 @@ export default function IntroductionPage() {
         </section>
 
         <section className="flex justify-between flex-col lg:flex-row-reverse items-start gap-12">
-          {/* Segunda imagem com lazy loading inteligente */}
           <OptimizedImage 
             src="/AnotandoGastos.jpg" 
             alt="Como funciona" 

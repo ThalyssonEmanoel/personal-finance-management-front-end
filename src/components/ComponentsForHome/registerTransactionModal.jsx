@@ -430,7 +430,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                       <CurrencyInput field={field} />
                     </FormControl>
                     <div id="value-help" className="sr-only">
-                      Digite o valor da transação em reais
+                      Digite o valor da transação
                     </div>
                     <FormMessage />
                   </FormItem>
