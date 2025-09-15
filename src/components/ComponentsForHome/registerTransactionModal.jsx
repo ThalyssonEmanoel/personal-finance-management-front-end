@@ -85,7 +85,6 @@ const CurrencyInput = memo(({ field, ...props }) => {
 
 CurrencyInput.displayName = 'CurrencyInput';
 
-// Componente de seletor de data otimizado
 const DatePicker = memo(({ field, dateOpen, setDateOpen }) => {
   const handleDateSelect = useCallback((date) => {
     if (date) {

@@ -3,8 +3,6 @@ import React, { useState, useEffect, memo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
 import {
@@ -59,6 +57,22 @@ const CurrencyInput = memo(({ field, ...props }) => {
     }).format(valueInReais)
   }, []);
 
+  const formatNumberToCurrency = useCallback((value) => {
+    if (!value || value === 0) return ""
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value)
+  }, []);
+
+  useEffect(() => {
+    if (field.value && field.value !== 0) {
+      setDisplayValue(formatNumberToCurrency(field.value))
+    } else {
+      setDisplayValue("")
+    }
+  }, [field.value, formatNumberToCurrency]);
+
   const handleChange = useCallback((e) => {
     const rawValue = e.target.value
     const formatted = formatCurrency(rawValue)
@@ -83,6 +97,47 @@ const CurrencyInput = memo(({ field, ...props }) => {
 });
 
 CurrencyInput.displayName = 'CurrencyInput';
+
+const DatePicker = memo(({ field, dateOpen, setDateOpen }) => {
+  const handleDateSelect = useCallback((date) => {
+    if (date) {
+      const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+      field.onChange(localDate.toISOString().split('T')[0])
+      setDateOpen(false)
+    }
+  }, [field, setDateOpen]);
+
+  return (
+    <Popover open={dateOpen} onOpenChange={setDateOpen}>
+      <PopoverTrigger asChild>
+        <FormControl>
+          <Button
+            variant="outline"
+            className="w-full justify-between"
+            aria-label={field.value ? `Data selecionada: ${new Date(field.value + 'T00:00:00').toLocaleDateString('pt-BR')}` : "Selecionar data da transferência"}
+            aria-expanded={dateOpen}
+            aria-haspopup="dialog"
+          >
+            {field.value ? new Date(field.value + 'T00:00:00').toLocaleDateString('pt-BR') : "Selecionar data"}
+            <CalendarIcon className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </FormControl>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start" role="dialog" aria-label="Calendário para seleção de data">
+        <Calendar
+          mode="single"
+          selected={field.value ? new Date(field.value + 'T00:00:00') : undefined}
+          onSelect={handleDateSelect}
+          captionLayout="dropdown"
+          defaultMonth={new Date()}
+          locale="pt-BR"
+        />
+      </PopoverContent>
+    </Popover>
+  );
+});
+
+DatePicker.displayName = 'DatePicker';
 
 const UpdateTransferModal = ({ isOpen, onClose, transfer }) => {
   const [dateOpen, setDateOpen] = useState(false);
@@ -124,16 +179,51 @@ const UpdateTransferModal = ({ isOpen, onClose, transfer }) => {
 
   const handleSubmit = async (data) => {
     try {
-      console.log('Dados para atualização:', data);
+      console.log('Dados do formulário:', data);
+      console.log('Transfer ID:', transfer?.id);
+
+      // Validação adicional dos dados antes do envio
+      if (!transfer?.id) {
+        console.error('ID da transferência não encontrado');
+        toast.error('Erro: ID da transferência não encontrado');
+        return;
+      }
+
+      if (!data.sourceAccountId || !data.destinationAccountId) {
+        console.error('Contas de origem ou destino não selecionadas');
+        toast.error('Erro: Selecione as contas de origem e destino');
+        return;
+      }
+
+      if (data.sourceAccountId === data.destinationAccountId) {
+        console.error('Conta de origem igual à conta de destino');
+        toast.error('Erro: A conta de origem deve ser diferente da conta de destino');
+        return;
+      }
+
+      if (!data.amount || data.amount <= 0) {
+        console.error('Valor inválido:', data.amount);
+        toast.error('Erro: O valor deve ser maior que zero');
+        return;
+      }
+
+      if (!data.transfer_date) {
+        console.error('Data da transferência não informada');
+        toast.error('Erro: Informe a data da transferência');
+        return;
+      }
 
       const updateData = {
-        amount: data.amount,
+        amount: Number(data.amount),
         transfer_date: data.transfer_date,
         description: data.description || undefined,
-        sourceAccountId: data.sourceAccountId,
-        destinationAccountId: data.destinationAccountId,
-        paymentMethodId: data.paymentMethodId || undefined,
+        sourceAccountId: Number(data.sourceAccountId),
+        destinationAccountId: Number(data.destinationAccountId),
+        paymentMethodId: data.paymentMethodId ? Number(data.paymentMethodId) : undefined,
       };
+
+      console.log('Dados para atualização:', updateData);
+      console.log('URL será construída com transferId:', transfer.id);
 
       updateTransfer(
         { transferId: transfer.id, transferData: updateData },
@@ -145,7 +235,8 @@ const UpdateTransferModal = ({ isOpen, onClose, transfer }) => {
           },
           onError: (err) => {
             console.error('Erro ao atualizar transferência:', err);
-            toast.error('Erro ao atualizar transferência. Tente novamente.');
+            console.error('Mensagem do erro:', err.message);
+            toast.error(`Erro ao atualizar transferência: ${err.message}`);
           }
         }
       );
@@ -178,7 +269,6 @@ const UpdateTransferModal = ({ isOpen, onClose, transfer }) => {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit, handleInvalidSubmit)} className="space-y-6">
-              {/* Valor */}
               <FormField
                 control={form.control}
                 name="amount"
@@ -192,48 +282,13 @@ const UpdateTransferModal = ({ isOpen, onClose, transfer }) => {
                   </FormItem>
                 )}
               />
-
-              {/* Data */}
               <FormField
                 control={form.control}
                 name="transfer_date"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>Data da Transferência</FormLabel>
-                    <Popover open={dateOpen} onOpenChange={setDateOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className="w-full pl-3 text-left font-normal"
-                            type="button"
-                          >
-                            {field.value ? (
-                              format(new Date(field.value), "PPP", { locale: ptBR })
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => {
-                            if (date) {
-                              field.onChange(date.toISOString().split('T')[0]);
-                              setDateOpen(false);
-                            }
-                          }}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePicker field={field} dateOpen={dateOpen} setDateOpen={setDateOpen} />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -252,7 +307,7 @@ const UpdateTransferModal = ({ isOpen, onClose, transfer }) => {
                       disabled={accountsLoading}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className={"w-full"}>
                           <SelectValue placeholder="Selecione a conta de origem" />
                         </SelectTrigger>
                       </FormControl>
@@ -282,7 +337,7 @@ const UpdateTransferModal = ({ isOpen, onClose, transfer }) => {
                       disabled={accountsLoading}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className={"w-full"}>
                           <SelectValue placeholder="Selecione a conta de destino" />
                         </SelectTrigger>
                       </FormControl>
@@ -312,7 +367,7 @@ const UpdateTransferModal = ({ isOpen, onClose, transfer }) => {
                       disabled={paymentMethodsLoading}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className={"w-full"}>
                           <SelectValue placeholder="Selecione a forma de pagamento" />
                         </SelectTrigger>
                       </FormControl>

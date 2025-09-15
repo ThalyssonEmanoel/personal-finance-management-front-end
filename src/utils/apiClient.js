@@ -841,7 +841,15 @@ export function useUpdateBankTransferMutation() {
         }
       );
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+          console.error('Erro detalhado da API:', errorData);
+        } catch (e) {
+          console.error('Erro ao parsear resposta de erro:', e);
+        }
+        throw new Error(errorMessage);
       }
       return response.json();
     },
