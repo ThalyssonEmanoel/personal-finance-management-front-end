@@ -85,7 +85,6 @@ const CurrencyInput = memo(({ field, ...props }) => {
 
 CurrencyInput.displayName = 'CurrencyInput';
 
-// Componente de seletor de data otimizado
 const DatePicker = memo(({ field, dateOpen, setDateOpen }) => {
   const handleDateSelect = useCallback((date) => {
     if (date) {
@@ -430,7 +429,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                       <CurrencyInput field={field} />
                     </FormControl>
                     <div id="value-help" className="sr-only">
-                      Digite o valor da transação em reais
+                      Digite o valor da transação
                     </div>
                     <FormMessage />
                   </FormItem>

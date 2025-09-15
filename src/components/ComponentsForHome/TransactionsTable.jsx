@@ -236,7 +236,6 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
     );
   }, [transactionsData, searchTerm]);
 
-  // Memoização das colunas da tabela
   const columns = useMemo(() => [
     {
       accessorKey: "type",

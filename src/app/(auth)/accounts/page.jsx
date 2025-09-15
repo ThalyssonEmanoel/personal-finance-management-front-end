@@ -16,6 +16,8 @@ import {
 // Lazy loading para reduzir JavaScript inicial
 const AccountsTable = React.lazy(() => import("@/components/ComponentsForAccounts/AccountsTable"));
 const RegisterAccountModal = React.lazy(() => import("@/components/ComponentsForAccounts/RegisterAccountModal"));
+const TransfersTable = React.lazy(() => import("@/components/ComponentsForBankTransfer/TransfersTable"));
+const RegisterTransferModal = React.lazy(() => import("@/components/ComponentsForBankTransfer/RegisterTransferModal"));
 
 // Loading fallback otimizado
 const LoadingFallback = memo(() => (
@@ -32,7 +34,7 @@ LoadingFallback.displayName = 'LoadingFallback';
 
 export default function AccountsPage() {
   const { isLoading: isAuthLoading } = useAuth();
-  const [selectedFilter, setSelectedFilter] = useState("Contas");
+  const [selectedFilter, setSelectedFilter] = useState("contas");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAccountChange = () => {
@@ -40,7 +42,12 @@ export default function AccountsPage() {
     console.log("Account changed");
   };
 
-  const handleCreateAccount = () => {
+  const handleTransferChange = () => {
+    // Callback para quando uma transferência for alterada
+    console.log("Transfer changed");
+  };
+
+  const handleCreateAction = () => {
     setIsModalOpen(true);
   };
 
@@ -72,7 +79,7 @@ export default function AccountsPage() {
       <div className="flex justify-between items-center mb-6">
         <div className="flex flex-col">
           <label htmlFor="account-filter" className="mb-2 text-base font-medium text-gray-700">Listar</label>
-          <Select>
+          <Select value={selectedFilter} onValueChange={setSelectedFilter}>
             <SelectTrigger 
               id="account-filter"
               className="w-56 h-10 border-2 border-neutral-300 rounded-sm"
@@ -90,23 +97,34 @@ export default function AccountsPage() {
         </div>
         <div>
           <ButtonC
-            texto="Cadastrar conta"
-            largura="120px"
+            texto={selectedFilter === "contas" ? "Cadastrar conta" : "Nova transferência"}
+            largura="140px"
             altura="40px"
             type="button"
-            onClick={handleCreateAccount}
+            onClick={handleCreateAction}
           />
         </div>
       </div>
       <Suspense fallback={<LoadingFallback />}>
-        <AccountsTable onAccountChange={handleAccountChange} />
+        {selectedFilter === "contas" ? (
+          <AccountsTable onAccountChange={handleAccountChange} />
+        ) : (
+          <TransfersTable onTransferChange={handleTransferChange} />
+        )}
       </Suspense>
       
       <Suspense fallback={null}>
-        <RegisterAccountModal 
-          isOpen={isModalOpen} 
-          onClose={handleCloseModal} 
-        />
+        {selectedFilter === "contas" ? (
+          <RegisterAccountModal 
+            isOpen={isModalOpen} 
+            onClose={handleCloseModal} 
+          />
+        ) : (
+          <RegisterTransferModal 
+            isOpen={isModalOpen} 
+            onClose={handleCloseModal} 
+          />
+        )}
       </Suspense>
     </div>
   );
