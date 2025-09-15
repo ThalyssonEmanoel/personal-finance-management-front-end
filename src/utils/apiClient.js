@@ -460,6 +460,55 @@ export function useGoalsQuery(filters, transactionType) {
   });
 }
 
+//query específica para a tabela de metas com filtros diferentes
+export function useGoalsTableQuery(filters = {}) {
+  const { authenticatedFetch, getUserInfo, enabled } = useApi();
+
+  return useQuery({
+    queryKey: ['goals-table', filters],
+    queryFn: async ({ queryKey }) => {
+      const [_key, currentFilters] = queryKey;
+      const userInfo = getUserInfo();
+      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() });
+
+      if (currentFilters.transaction_type && currentFilters.transaction_type !== 'All') {
+        queryParams.append('transaction_type', currentFilters.transaction_type);
+      }
+      if (currentFilters.month) {
+        queryParams.append('month', currentFilters.month);
+      }
+
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/goals?${queryParams.toString()}`;
+      const response = await authenticatedFetch(url);
+
+      if (response.status === 404) {
+        return {
+          data: [],
+          total: 0,
+        };
+      }
+
+      if (!response.ok) throw new Error('Erro ao buscar metas');
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.message || 'Erro na resposta da API');
+
+      return {
+        data: data.data || [],
+        total: data.total || 0,
+      };
+    },
+    placeholderData: (previousData) => previousData,
+    enabled: enabled,
+    retry: (failureCount, error) => {
+      if (error?.message?.includes('404')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+  });
+}
+
 export function usePaymentMethodsQuery() {
   const { authenticatedFetch, enabled } = useApi();
 

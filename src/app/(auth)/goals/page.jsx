@@ -1,8 +1,16 @@
 'use client'
 import { useAuth } from "@/hooks/useAuth"
+import { useState, useCallback } from 'react'
+import FilterSection from '@/components/ComponentsForGoals/FilterSection'
+import GoalsTable from '@/components/ComponentsForGoals/GoalsTable'
 
 export default function GoalsPage() {
   const { isLoading, isAuthenticated } = useAuth();
+  const [filters, setFilters] = useState({});
+
+  const handleFiltersChange = useCallback((newFilters) => {
+    setFilters(newFilters);
+  }, []);
 
   if (isLoading()) {
     return (
@@ -34,23 +42,15 @@ export default function GoalsPage() {
 
   return (
     <div style={{
-      padding: '2rem',
-      maxWidth: '1200px',
-      margin: '0 auto'
     }}>
-
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '400px',
-        border: '2px dashed #ddd',
-        borderRadius: '8px',
-        fontSize: '1.2rem',
-        color: '#666'
-      }}>
-        Hello World
-      </div>
+      <FilterSection onFiltersChange={handleFiltersChange} />
+      <section
+        className="px-20 mb-10"
+        aria-label="Tabela de transações"
+        style={{ minHeight: '300px' }}
+      >
+        <GoalsTable filters={filters} />
+      </section>
     </div>
   );
 }
