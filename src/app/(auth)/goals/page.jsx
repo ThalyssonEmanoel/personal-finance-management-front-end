@@ -41,12 +41,12 @@ export default function GoalsPage() {
   }
 
   return (
-    <div style={{
-    }}>
+    <div>
       <FilterSection onFiltersChange={handleFiltersChange} />
+      
       <section
         className="px-20 mb-10"
-        aria-label="Tabela de transações"
+        aria-label="Tabela de metas"
         style={{ minHeight: '300px' }}
       >
         <GoalsTable filters={filters} />

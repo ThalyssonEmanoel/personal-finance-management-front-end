@@ -13,14 +13,25 @@ import { Input } from "@/components/ui/input";
 import {
   ChevronUp,
   ChevronDown,
-  Search
+  Search,
+  MoreHorizontal
 } from "lucide-react";
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
+  flexRender,
 } from "@tanstack/react-table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 const SortableHeader = memo(({ children, column, className = "" }) => (
   <div
@@ -56,10 +67,8 @@ SortableHeader.displayName = 'SortableHeader';
 
 const GoalsTable = memo(({ filters: externalFilters = {} }) => {
   const [sorting, setSorting] = useState([]);
-  const [page, setPage] = useState(1);
   const [allGoals, setAllGoals] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('All');
 
   const { dimensions, elementRef } = useStableDimensions({
     minHeight: '400px'
@@ -67,8 +76,6 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
 
   const { data, isLoading, isError, error } = useGoalsTableQuery({
     ...externalFilters,
-    page,
-    limit: 20
   });
 
   useEffect(() => {
@@ -77,16 +84,8 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
     }
   }, [data]);
 
-  useEffect(() => {
-    setPage(1);
-    setAllGoals([]);
-  }, [externalFilters]);
-
   const filteredGoals = useMemo(() => {
     let filtered = allGoals;
-    if (typeFilter !== 'All') {
-      filtered = filtered.filter(goal => goal.transaction_type === typeFilter);
-    }
     if (searchTerm) {
       filtered = filtered.filter(goal =>
         Object.values(goal).some(value =>
@@ -96,7 +95,23 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
     }
 
     return filtered;
-  }, [allGoals, typeFilter, searchTerm]);
+  }, [allGoals, searchTerm]);
+
+  // Placeholder functions for actions - to be implemented later
+  const handleViewClick = useCallback((goal) => {
+    console.log('Visualizar meta:', goal);
+    // TODO: Implementar modal de visualização
+  }, []);
+
+  const handleEditClick = useCallback((goal) => {
+    console.log('Editar meta:', goal);
+    // TODO: Implementar modal de edição
+  }, []);
+
+  const handleDeleteClick = useCallback((goal) => {
+    console.log('Excluir meta:', goal);
+    // TODO: Implementar confirmação de exclusão
+  }, []);
 
   const columns = useMemo(() => [
     {
@@ -178,7 +193,37 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
         return a - b;
       },
     },
-  ], []);
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const goal = row.original;
+
+        return React.createElement(DropdownMenu, null,
+          React.createElement(DropdownMenuTrigger, { asChild: true },
+            React.createElement(Button, { variant: "ghost", className: "h-8 w-8 p-0" },
+              React.createElement("span", { className: "sr-only" }, "Abrir menu"),
+              React.createElement(MoreHorizontal, { className: "h-4 w-4" })
+            )
+          ),
+          React.createElement(DropdownMenuContent, { align: "end" },
+            React.createElement(DropdownMenuLabel, null, "Ações"),
+            React.createElement(DropdownMenuSeparator),
+            React.createElement(DropdownMenuItem, {
+              onClick: () => handleViewClick(goal)
+            }, "Visualizar"),
+            React.createElement(DropdownMenuItem, {
+              onClick: () => handleEditClick(goal)
+            }, "Editar"),
+            React.createElement(DropdownMenuItem, {
+              onClick: () => handleDeleteClick(goal),
+              className: "text-red-600 focus:text-red-600"
+            }, "Excluir")
+          )
+        );
+      },
+    },
+  ], [handleViewClick, handleEditClick, handleDeleteClick]);
 
   const table = useReactTable({
     data: filteredGoals,
@@ -205,12 +250,6 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
       </div>
     );
   }
-
-  const typeOptions = [
-    { value: 'All', label: 'Todas as metas' },
-    { value: 'income', label: 'Receita' },
-    { value: 'expense', label: 'Despesa' }
-  ];
 
   return (
     <div
@@ -264,10 +303,10 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
                       <TableHead key={header.id} role="columnheader">
                         {header.isPlaceholder
                           ? null
-                          : header.column.getCanSort()
-                            ? header.column.columnDef.header({ column: header.column })
-                            : header.column.columnDef.header
-                        }
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -294,7 +333,10 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id} role="gridcell">
-                          {cell.column.columnDef.cell({ row, getValue: cell.getValue })}
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
                         </TableCell>
                       ))}
                     </TableRow>

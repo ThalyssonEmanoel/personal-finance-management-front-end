@@ -933,3 +933,42 @@ export function useDeleteBankTransferMutation() {
     },
   });
 }
+
+export function useCreateGoalMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (goalData) => {
+      const userInfo = getUserInfo();
+      console.log('Creating goal for user ID:', userInfo.id, 'with data:', goalData);
+      
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/goals?userId=${userInfo.id}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(goalData),
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || 
+          (response.status === 400 ? 'Dados inválidos fornecidos' :
+           response.status === 401 ? 'Não autorizado' :
+           response.status === 403 ? 'Acesso negado' :
+           response.status === 409 ? 'Já existe uma meta para este tipo e mês' :
+           response.status === 500 ? 'Erro interno do servidor' :
+           'Erro ao criar meta');
+        throw new Error(errorMessage);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goals-table'] });
+    },
+  });
+}

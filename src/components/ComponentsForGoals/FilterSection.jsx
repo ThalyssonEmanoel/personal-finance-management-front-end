@@ -10,6 +10,7 @@ import {
 import AccessibleButton from '@/components/AccessibleButton'
 import AccessibleSelect from '@/components/AccessibleSelect'
 import { withPerformanceOptimization, useStableDimensions } from '@/hooks/usePerformanceOptimization';
+import RegisterGoalModal from './RegisterGoalModal';
 
 const FilterSection = memo(({ onFiltersChange }) => {
   const [open, setOpen] = useState(false);
@@ -18,12 +19,11 @@ const FilterSection = memo(({ onFiltersChange }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const lastFiltersRef = useRef({});
   
-  // Hook para dimensões estáveis e prevenção de layout shift
   const { dimensions, elementRef } = useStableDimensions({
-    minHeight: '120px' // Altura mínima para evitar layout shift
+    minHeight: '120px' 
   });
 
-  // Memoização dos tipos de meta
+
   const typeItems = useMemo(() => [
     { value: "All", label: "Todos os tipos" },
     { value: "income", label: "Receita" },
@@ -36,12 +36,16 @@ const FilterSection = memo(({ onFiltersChange }) => {
       month: date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` : undefined
     };
     
-    // Debounce para evitar muitas chamadas
+    // Remove propriedades undefined para evitar problemas
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, value]) => value !== undefined)
+    );
+    
     const timeoutId = setTimeout(() => {
-      if (JSON.stringify(filters) !== JSON.stringify(lastFiltersRef.current)) {
-        lastFiltersRef.current = filters;
+      if (JSON.stringify(cleanFilters) !== JSON.stringify(lastFiltersRef.current)) {
+        lastFiltersRef.current = cleanFilters;
         if (onFiltersChange) {
-          onFiltersChange(filters);
+          onFiltersChange(cleanFilters);
         }
       }
     }, 100);
@@ -132,21 +136,11 @@ const FilterSection = memo(({ onFiltersChange }) => {
         </AccessibleButton>
       </div>
 
-      {/* TODO: Implementar modal de criação de meta */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h2 className="text-xl font-semibold mb-4">Criar Meta</h2>
-            <p className="text-gray-600 mb-4">Modal de criação de meta em desenvolvimento...</p>
-            <AccessibleButton
-              onClick={handleCreateModalClose}
-              className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800"
-            >
-              Fechar
-            </AccessibleButton>
-          </div>
-        </div>
-      )}
+      {/* Modal para criação de nova meta */}
+      <RegisterGoalModal 
+        isOpen={isCreateModalOpen} 
+        onClose={handleCreateModalClose} 
+      />
     </div>
   )
 });
