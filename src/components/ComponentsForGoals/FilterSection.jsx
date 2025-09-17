@@ -33,7 +33,7 @@ const FilterSection = memo(({ onFiltersChange }) => {
   useEffect(() => {
     const filters = {
       transaction_type: selectedType !== "All" ? selectedType : undefined,
-      month: date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` : undefined
+      date: date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01` : undefined
     };
     
     // Remove propriedades undefined para evitar problemas
@@ -54,7 +54,12 @@ const FilterSection = memo(({ onFiltersChange }) => {
   }, [selectedType, date, onFiltersChange]);
 
   const handleDateSelect = (selectedDate) => {
-    setDate(selectedDate);
+    if (selectedDate) {
+      const firstDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+      setDate(firstDayOfMonth);
+    } else {
+      setDate(selectedDate);
+    }
     setOpen(false);
   };
 
@@ -105,6 +110,8 @@ const FilterSection = memo(({ onFiltersChange }) => {
                 captionLayout="dropdown"
                 onSelect={handleDateSelect}
                 aria-label="Selecionar mês das metas"
+                fromYear={2020}
+                toYear={2030}
               />
             </PopoverContent>
           </Popover>

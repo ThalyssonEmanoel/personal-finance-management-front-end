@@ -474,8 +474,8 @@ export function useGoalsTableQuery(filters = {}) {
       if (currentFilters.transaction_type && currentFilters.transaction_type !== 'All') {
         queryParams.append('transaction_type', currentFilters.transaction_type);
       }
-      if (currentFilters.month) {
-        queryParams.append('month', currentFilters.month);
+      if (currentFilters.date) {
+        queryParams.append('date', currentFilters.date);
       }
       if (currentFilters.limit && currentFilters.limit !== undefined) {
         queryParams.append('limit', currentFilters.limit.toString());
