@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
-import { useGoalsTableQuery } from '../../utils/apiClient.js';
+import { useGoalsTableQuery, useDeleteGoalMutation } from '../../utils/apiClient.js';
 import { withPerformanceOptimization, useStableDimensions } from '@/hooks/usePerformanceOptimization';
 import {
   Table,
@@ -14,7 +14,9 @@ import {
   ChevronUp,
   ChevronDown,
   Search,
-  MoreHorizontal
+  MoreHorizontal,
+  Trash2,
+  X
 } from "lucide-react";
 import {
   useReactTable,
@@ -31,7 +33,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import AccessibleButton from "@/components/AccessibleButton";
+import ViewGoalModal from "./ViewGoalModal";
 
 const SortableHeader = memo(({ children, column, className = "" }) => (
   <div
@@ -69,6 +80,10 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
   const [sorting, setSorting] = useState([]);
   const [allGoals, setAllGoals] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [goalToDelete, setGoalToDelete] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [goalToView, setGoalToView] = useState(null);
 
   const { dimensions, elementRef } = useStableDimensions({
     minHeight: '400px'
@@ -77,6 +92,8 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
   const { data, isLoading, isError, error } = useGoalsTableQuery({
     ...externalFilters,
   });
+
+  const { mutate: deleteGoal, isPending: isDeleting } = useDeleteGoalMutation();
 
   useEffect(() => {
     if (data?.data) {
@@ -97,10 +114,14 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
     return filtered;
   }, [allGoals, searchTerm]);
 
-  // Placeholder functions for actions - to be implemented later
   const handleViewClick = useCallback((goal) => {
-    console.log('Visualizar meta:', goal);
-    // TODO: Implementar modal de visualização
+    setGoalToView(goal);
+    setIsViewModalOpen(true);
+  }, []);
+
+  const handleCloseViewModal = useCallback(() => {
+    setIsViewModalOpen(false);
+    setGoalToView(null);
   }, []);
 
   const handleEditClick = useCallback((goal) => {
@@ -109,8 +130,33 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
   }, []);
 
   const handleDeleteClick = useCallback((goal) => {
-    console.log('Excluir meta:', goal);
-    // TODO: Implementar confirmação de exclusão
+    setGoalToDelete(goal);
+    setIsDeleteModalOpen(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (goalToDelete) {
+      deleteGoal(goalToDelete.id, {
+        onSuccess: () => {
+          setIsDeleteModalOpen(false);
+          setGoalToDelete(null);
+        },
+        onError: (error) => {
+          console.error('Erro ao deletar meta:', error);
+          // You could add a toast notification here
+        }
+      });
+    }
+  }, [goalToDelete, deleteGoal]);
+
+  const handleCancelDelete = useCallback(() => {
+    setIsDeleteModalOpen(false);
+    setGoalToDelete(null);
+  }, []);
+
+  const getDeleteMessage = useCallback((goal) => {
+    const typeText = goal.transaction_type === 'income' ? 'receita' : 'despesa';
+    return `Tem certeza de que deseja excluir a meta "${goal.name}" para ${typeText}? Esta ação não pode ser desfeita.`;
   }, []);
 
   const columns = useMemo(() => [
@@ -140,7 +186,7 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
       cell: ({ row }) => {
         const type = row.getValue("transaction_type");
         const typeLabel = type === 'income' ? 'Receita' : type === 'expense' ? 'Despesa' : type;
-        const colorClass = type === 'income' ? "text-green-500" : "text-red-500";
+        const colorClass = type === 'income' ? "text-green-600 font-bold" : "text-red-600 font-bold";
 
         return (
           <div className="flex items-center relative -ml-4 -mt-3 -mb-3">
@@ -199,27 +245,31 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
       cell: ({ row }) => {
         const goal = row.original;
 
-        return React.createElement(DropdownMenu, null,
-          React.createElement(DropdownMenuTrigger, { asChild: true },
-            React.createElement(Button, { variant: "ghost", className: "h-8 w-8 p-0" },
-              React.createElement("span", { className: "sr-only" }, "Abrir menu"),
-              React.createElement(MoreHorizontal, { className: "h-4 w-4" })
-            )
-          ),
-          React.createElement(DropdownMenuContent, { align: "end" },
-            React.createElement(DropdownMenuLabel, null, "Ações"),
-            React.createElement(DropdownMenuSeparator),
-            React.createElement(DropdownMenuItem, {
-              onClick: () => handleViewClick(goal)
-            }, "Visualizar"),
-            React.createElement(DropdownMenuItem, {
-              onClick: () => handleEditClick(goal)
-            }, "Editar"),
-            React.createElement(DropdownMenuItem, {
-              onClick: () => handleDeleteClick(goal),
-              className: "text-red-600 focus:text-red-600"
-            }, "Excluir")
-          )
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Abrir menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Ações</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleViewClick(goal)}>
+                Visualizar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleEditClick(goal)}>
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDeleteClick(goal)}
+                className="text-red-600 focus:text-red-600"
+              >
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     },
@@ -358,6 +408,68 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
           </div>
         </div>
       </div>
+
+      <ViewGoalModal
+        isOpen={isViewModalOpen}
+        onClose={handleCloseViewModal}
+        goal={goalToView}
+      />
+
+      <Dialog 
+        open={isDeleteModalOpen} 
+        onOpenChange={setIsDeleteModalOpen}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
+          <div className="flex justify-end">
+            <AccessibleButton
+              variant="ghost"
+              size="sm"
+              onClick={handleCancelDelete}
+              ariaLabel="Fechar modal de exclusão"
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-4 w-4" />
+            </AccessibleButton>
+          </div>
+          
+          <div className="flex flex-col items-center text-center">
+            <div className="mt-4 mb-6">
+              <Trash2 className="h-16 w-16 text-neutral-300 mx-auto" aria-hidden="true" />
+            </div>
+            
+            <DialogHeader className="mb-6">
+              <DialogTitle id="delete-dialog-title" className="text-lg font-semibold">
+                Excluir Meta
+              </DialogTitle>
+            </DialogHeader>
+
+            <p id="delete-dialog-description" className="mb-6 text-sm leading-relaxed">
+              {goalToDelete && getDeleteMessage(goalToDelete)}
+            </p>
+
+            <DialogFooter className="flex gap-3 w-full">
+              <Button
+                variant="outline"
+                onClick={handleCancelDelete}
+                className="flex-1"
+                disabled={isDeleting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                className="flex-1"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Excluindo...' : 'Excluir'}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 });

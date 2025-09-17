@@ -52,8 +52,6 @@ import { withPerformanceOptimization, useStableDimensions } from '@/hooks/usePer
 import Decimal from 'decimal.js';
 
 const ITEMS_PER_PAGE = 5;
-
-// Componente de célula otimizado para ações
 const ActionCell = memo(({ transaction, onView, onEdit, onDelete }) => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
@@ -97,7 +95,6 @@ const ActionCell = memo(({ transaction, onView, onEdit, onDelete }) => (
 
 ActionCell.displayName = 'ActionCell';
 
-// Componente de cabeçalho de coluna otimizado
 const SortableHeader = memo(({ children, column, className = "" }) => (
   <div 
     className={`flex items-center cursor-pointer hover:text-gray-600 ${className}`}
@@ -151,7 +148,6 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
     minHeight: '400px'
   });
 
-  // Callbacks otimizados
   const handleViewClick = useCallback((transaction) => {
     setTransactionToView(transaction);
     setIsViewModalOpen(true);
@@ -177,13 +173,12 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
     setIsDeleteModalOpen(true);
   }, []);
 
-  // Memoização dos filtros da query
   const queryFilters = useMemo(() => ({
     ...externalFilters,
     ...localFilters,
   }), [externalFilters, localFilters]);
 
-  const { data, isLoading, isError, error } = useTransactionsQuery(queryFilters);
+  const { data, isLoading } = useTransactionsQuery(queryFilters);
   const transactionsData = data?.transactions ?? [];
   const pagination = data?.pagination ?? { total: 0, page: 1 };
   const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteTransactionMutation();
@@ -226,7 +221,6 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
     return "Você tem certeza que deseja apagar essa transação?";
   }, []);
 
-  // Memoização do filtro de transações
   const filteredTransactions = useMemo(() => {
     if (!searchTerm) return transactionsData;
     return transactionsData.filter(transaction =>
@@ -300,7 +294,7 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
       sortingFn: (rowA, rowB) => {
         const dateA = new Date(rowA.original.release_date);
         const dateB = new Date(rowB.original.release_date);
-        return dateB.getTime() - dateA.getTime(); // Mais recente primeiro (desc por padrão)
+        return dateB.getTime() - dateA.getTime(); 
       },
     },
     {
@@ -334,7 +328,7 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
         const finalValueA = typeA === "expense" ? -valueA : valueA;
         const finalValueB = typeB === "expense" ? -valueB : valueB;
         
-        return finalValueA - finalValueB; // Menor para maior (incluindo negativos)
+        return finalValueA - finalValueB; 
       },
     },
     {

@@ -972,3 +972,27 @@ export function useCreateGoalMutation() {
     },
   });
 }
+
+export function useDeleteGoalMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (goalId) => {
+      const userInfo = getUserInfo();
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/goals/{id}?id=${goalId}&userId=${userInfo.id}`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Erro ao deletar meta');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goals-table'] });
+    },
+  });
+}
