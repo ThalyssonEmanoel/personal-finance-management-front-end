@@ -19,16 +19,15 @@ export const createGoalSchema = z.object({
 export const updateGoalSchema = z.object({
   name: z.string()
     .min(1, "O nome da meta é obrigatório.")
-    .max(100, "O nome deve ter no máximo 100 caracteres.")
-    .optional(),
-  date: z.string()
-    .min(1, "A data é obrigatória.")
-    .optional(),
+    .max(100, "O nome deve ter no máximo 100 caracteres."),
+  date: z.string({ required_error: "A data é obrigatória." })
+    .min(1, "A data é obrigatória."),
   transaction_type: z.enum(["income", "expense"], { 
-    message: "O tipo da meta deve ser receita ou despesa." 
-  }).optional(),
-  value: z.number()
-    .positive("O valor deve ser positivo")
-    .min(0.01, "O valor mínimo é R$ 0,01")
-    .optional()
+    message: "O tipo da meta é obrigatório." 
+  }),
+  value: z.number({
+    required_error: "O valor é obrigatório.",
+    invalid_type_error: "O valor precisa ser um número.",
+  })
+    .min(0.01, "O valor deve ser maior que zero.")
 });

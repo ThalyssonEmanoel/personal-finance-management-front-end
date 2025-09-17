@@ -996,3 +996,31 @@ export function useDeleteGoalMutation() {
     },
   });
 }
+
+export function useUpdateGoalMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ goalId, goalData }) => {
+      const userInfo = getUserInfo();
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/goals/${goalId}?id=${goalId}&userId=${userInfo.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(goalData),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao atualizar meta');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goals-table'] });
+    },
+  });
+}

@@ -43,6 +43,7 @@ import {
 import { Button } from "@/components/ui/button";
 import AccessibleButton from "@/components/AccessibleButton";
 import ViewGoalModal from "./ViewGoalModal";
+import UpdateGoalsModal from "./UpdateGoalsModal";
 
 const SortableHeader = memo(({ children, column, className = "" }) => (
   <div
@@ -84,6 +85,8 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
   const [goalToDelete, setGoalToDelete] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [goalToView, setGoalToView] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [goalToEdit, setGoalToEdit] = useState(null);
 
   const { dimensions, elementRef } = useStableDimensions({
     minHeight: '400px'
@@ -125,8 +128,13 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
   }, []);
 
   const handleEditClick = useCallback((goal) => {
-    console.log('Editar meta:', goal);
-    // TODO: Implementar modal de edição
+    setGoalToEdit(goal);
+    setIsEditModalOpen(true);
+  }, []);
+
+  const handleCloseEditModal = useCallback(() => {
+    setIsEditModalOpen(false);
+    setGoalToEdit(null);
   }, []);
 
   const handleDeleteClick = useCallback((goal) => {
@@ -143,7 +151,6 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
         },
         onError: (error) => {
           console.error('Erro ao deletar meta:', error);
-          // You could add a toast notification here
         }
       });
     }
@@ -413,6 +420,12 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
         isOpen={isViewModalOpen}
         onClose={handleCloseViewModal}
         goal={goalToView}
+      />
+
+      <UpdateGoalsModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        goal={goalToEdit}
       />
 
       <Dialog 
