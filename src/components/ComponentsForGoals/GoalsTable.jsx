@@ -40,6 +40,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import AccessibleButton from "@/components/AccessibleButton";
 import ViewGoalModal from "./ViewGoalModal";
@@ -77,8 +86,14 @@ const SortableHeader = memo(({ children, column, className = "" }) => (
 
 SortableHeader.displayName = 'SortableHeader';
 
+const ITEMS_PER_PAGE = 5;
+
 const GoalsTable = memo(({ filters: externalFilters = {} }) => {
   const [sorting, setSorting] = useState([]);
+  const [localFilters, setLocalFilters] = useState({
+    page: 1,
+    limit: ITEMS_PER_PAGE,
+  });
   const [allGoals, setAllGoals] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -92,11 +107,17 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
     minHeight: '400px'
   });
 
-  const { data, isLoading, isError, error } = useGoalsTableQuery({
+  const queryFilters = useMemo(() => ({
     ...externalFilters,
-  });
+    ...localFilters,
+  }), [externalFilters, localFilters]);
+
+  const { data, isLoading, isError, error } = useGoalsTableQuery(queryFilters);
 
   const { mutate: deleteGoal, isPending: isDeleting } = useDeleteGoalMutation();
+
+  const goalsData = data?.data ?? [];
+  const pagination = data?.pagination ?? { total: 0, page: 1 };
 
   useEffect(() => {
     if (data?.data) {
@@ -104,18 +125,18 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
     }
   }, [data]);
 
-  const filteredGoals = useMemo(() => {
-    let filtered = allGoals;
-    if (searchTerm) {
-      filtered = filtered.filter(goal =>
-        Object.values(goal).some(value =>
-          String(value)?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
-    }
+  const goToPage = useCallback((page) => {
+    setLocalFilters(prev => ({ ...prev, page }));
+  }, []);
 
-    return filtered;
-  }, [allGoals, searchTerm]);
+  const filteredGoals = useMemo(() => {
+    if (!searchTerm) return goalsData;
+    return goalsData.filter(goal =>
+      Object.values(goal).some(value =>
+        String(value)?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  }, [goalsData, searchTerm]);
 
   const handleViewClick = useCallback((goal) => {
     setGoalToView(goal);
@@ -289,10 +310,41 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
+    manualPagination: true,
+    pageCount: pagination.total_pages,
     state: {
       sorting,
+      pagination: {
+        pageIndex: pagination.page - 1,
+        pageSize: ITEMS_PER_PAGE,
+      },
     },
   });
+
+  const totalPages = Math.ceil(pagination.total / ITEMS_PER_PAGE);
+  const currentPage = localFilters.page;
+
+  // Memoização das páginas visíveis
+  const visiblePages = useMemo(() => {
+    const pages = [];
+    const maxVisiblePages = 3;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 2) {
+        pages.push(1, 2, 3);
+      } else if (currentPage >= totalPages - 1) {
+        pages.push(totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(currentPage - 1, currentPage, currentPage + 1);
+      }
+    }
+    
+    return pages;
+  }, [totalPages, currentPage]);
 
   if (isError) {
     return (
@@ -315,13 +367,13 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
       role="region"
       aria-label="Tabela de metas"
     >
-      <div className="border-2 border-neutral-300 rounded-md h-165 overflow-y-auto">
+      <div className="border-2 border-neutral-300 rounded-md h-165">
         <div className="px-8 py-8">
           <div className="flex justify-between">
             <div>
               <h2 className="text-xl font-semibold mb-2">Metas recentes</h2>
               <p className="text-sm text-muted-foreground mb-6">
-                Você possui um total de {filteredGoals.length} metas.
+                Você possui um total de {pagination.total} metas.
               </p>
             </div>
             <div className="relative w-56">
@@ -415,6 +467,55 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
           </div>
         </div>
       </div>
+
+      {totalPages > 1 && (
+        <nav 
+          className="mt-6 flex justify-center"
+          aria-label="Navegação de páginas"
+        >
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => goToPage(currentPage - 1)}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  aria-disabled={currentPage === 1}
+                  aria-label="Página anterior"
+                />
+              </PaginationItem>
+              
+              {visiblePages.map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    onClick={() => goToPage(page)}
+                    isActive={currentPage === page}
+                    className="cursor-pointer"
+                    aria-label={`Página ${page}`}
+                    aria-current={currentPage === page ? "page" : undefined}
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              
+              {totalPages > 3 && currentPage < totalPages - 1 && (
+                <PaginationItem>
+                  <PaginationEllipsis aria-label="Mais páginas" />
+                </PaginationItem>
+              )}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => goToPage(currentPage + 1)}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  aria-disabled={currentPage === totalPages}
+                  aria-label="Próxima página"
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </nav>
+      )}
 
       <ViewGoalModal
         isOpen={isViewModalOpen}

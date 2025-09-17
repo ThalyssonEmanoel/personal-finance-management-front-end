@@ -477,6 +477,12 @@ export function useGoalsTableQuery(filters = {}) {
       if (currentFilters.month) {
         queryParams.append('month', currentFilters.month);
       }
+      if (currentFilters.limit && currentFilters.limit !== undefined) {
+        queryParams.append('limit', currentFilters.limit.toString());
+      }
+      if (currentFilters.page && currentFilters.page !== undefined) {
+        queryParams.append('page', currentFilters.page.toString());
+      }
 
       const url = `${process.env.NEXT_PUBLIC_API_URL}/goals?${queryParams.toString()}`;
       const response = await authenticatedFetch(url);
@@ -485,17 +491,29 @@ export function useGoalsTableQuery(filters = {}) {
         return {
           data: [],
           total: 0,
+          pagination: {
+            page: currentFilters.page || 1,
+            total: 0,
+            limit: currentFilters.limit || 5,
+            total_pages: 0,
+          },
         };
       }
 
-      if (!response.ok) throw new Error('Erro ao buscar metas');
+      if (!response.ok) throw new Error('Erro ao carregar metas');
 
       const data = await response.json();
-      if (data.error) throw new Error(data.message || 'Erro na resposta da API');
+      if (data.error) throw new Error(data.error);
 
       return {
         data: data.data || [],
         total: data.total || 0,
+        pagination: {
+          page: data.page || currentFilters.page || 1,
+          total: data.total || 0,
+          limit: data.limit || currentFilters.limit || 5,
+          total_pages: data.total_pages || Math.ceil((data.total || 0) / (data.limit || currentFilters.limit || 5)),
+        },
       };
     },
     placeholderData: (previousData) => previousData,

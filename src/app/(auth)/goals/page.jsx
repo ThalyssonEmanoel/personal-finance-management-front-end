@@ -3,9 +3,10 @@ import { useAuth } from "@/hooks/useAuth"
 import { useState, useCallback } from 'react'
 import FilterSection from '@/components/ComponentsForGoals/FilterSection'
 import GoalsTable from '@/components/ComponentsForGoals/GoalsTable'
+import { Progress } from "@/components/ui/progress"
 
 export default function GoalsPage() {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading } = useAuth();
   const [filters, setFilters] = useState({});
 
   const handleFiltersChange = useCallback((newFilters) => {
@@ -14,28 +15,12 @@ export default function GoalsPage() {
 
   if (isLoading()) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '1.5rem'
-      }}>
-        Carregando...
-      </div>
-    );
-  }
-
-  if (!isAuthenticated()) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '1.5rem'
-      }}>
-        Acesso não autorizado
+      <div
+        className="flex flex-col items-center justify-center mt-100"
+        style={{ minHeight: '400px' }}
+      >
+        <span className="text-lg mb-4">Carregando gráficos...</span>
+        <Progress value={100} className="w-[20%]" />
       </div>
     );
   }
@@ -43,7 +28,7 @@ export default function GoalsPage() {
   return (
     <div>
       <FilterSection onFiltersChange={handleFiltersChange} />
-      
+
       <section
         className="px-20 mb-10"
         aria-label="Tabela de metas"
