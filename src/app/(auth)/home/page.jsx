@@ -14,7 +14,7 @@ const ChartsSection = React.lazy(() => import('@/components/ComponentsForHome/Ch
 const LoadingFallback = memo(() => (
   <div 
     className="flex flex-col items-center justify-center"
-    style={{ minHeight: '400px' }} // Altura fixa para evitar layout shift
+    style={{ minHeight: '400px' }} 
   >
     <span className="text-lg mb-4">Carregando gráficos...</span>
     <Progress value={100} className="w-[20%]" />
@@ -22,8 +22,6 @@ const LoadingFallback = memo(() => (
 ));
 
 LoadingFallback.displayName = 'LoadingFallback';
-
-// Componente principal otimizado
 const HomePage = memo(() => {
   const { isLoading: isAuthLoading } = useAuth();
   const [filters, setFilters] = useState({
@@ -33,8 +31,6 @@ const HomePage = memo(() => {
   
   const { data: accountsData, isLoading: isAccountsLoading } = useAccountsQuery();
   const { data: transactionsData, isLoading: isTransactionsLoading, isError: isTransactionsError } = useTransactionsQuery(filters);
-  
-  // Hook para dimensões estáveis
   const { dimensions, elementRef } = useStableDimensions({
     minHeight: '100vh'
   });
@@ -146,7 +142,7 @@ const HomePage = memo(() => {
       <section 
         className="px-20 mt-10 mb-10"
         aria-label="Tabela de transações"
-        style={{ minHeight: '300px' }} // Altura mínima para evitar layout shift
+        style={{ minHeight: '300px' }}
       >
         <TransactionsTable filters={filters} />
       </section>

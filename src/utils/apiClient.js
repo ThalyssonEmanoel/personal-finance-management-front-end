@@ -460,6 +460,73 @@ export function useGoalsQuery(filters, transactionType) {
   });
 }
 
+//query específica para a tabela de metas com filtros diferentes
+export function useGoalsTableQuery(filters = {}) {
+  const { authenticatedFetch, getUserInfo, enabled } = useApi();
+
+  return useQuery({
+    queryKey: ['goals-table', filters],
+    queryFn: async ({ queryKey }) => {
+      const [_key, currentFilters] = queryKey;
+      const userInfo = getUserInfo();
+      const queryParams = new URLSearchParams({ userId: userInfo.id.toString() });
+
+      if (currentFilters.transaction_type && currentFilters.transaction_type !== 'All') {
+        queryParams.append('transaction_type', currentFilters.transaction_type);
+      }
+      if (currentFilters.date) {
+        queryParams.append('date', currentFilters.date);
+      }
+      if (currentFilters.limit && currentFilters.limit !== undefined) {
+        queryParams.append('limit', currentFilters.limit.toString());
+      }
+      if (currentFilters.page && currentFilters.page !== undefined) {
+        queryParams.append('page', currentFilters.page.toString());
+      }
+
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/goals?${queryParams.toString()}`;
+      const response = await authenticatedFetch(url);
+
+      if (response.status === 404) {
+        return {
+          data: [],
+          total: 0,
+          pagination: {
+            page: currentFilters.page || 1,
+            total: 0,
+            limit: currentFilters.limit || 5,
+            total_pages: 0,
+          },
+        };
+      }
+
+      if (!response.ok) throw new Error('Erro ao carregar metas');
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      return {
+        data: data.data || [],
+        total: data.total || 0,
+        pagination: {
+          page: data.page || currentFilters.page || 1,
+          total: data.total || 0,
+          limit: data.limit || currentFilters.limit || 5,
+          total_pages: data.total_pages || Math.ceil((data.total || 0) / (data.limit || currentFilters.limit || 5)),
+        },
+      };
+    },
+    placeholderData: (previousData) => previousData,
+    enabled: enabled,
+    retry: (failureCount, error) => {
+      if (error?.message?.includes('404')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+  });
+}
+
 export function usePaymentMethodsQuery() {
   const { authenticatedFetch, enabled } = useApi();
 
@@ -881,6 +948,97 @@ export function useDeleteBankTransferMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bank-transfers'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+}
+
+export function useCreateGoalMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (goalData) => {
+      const userInfo = getUserInfo();
+      console.log('Creating goal for user ID:', userInfo.id, 'with data:', goalData);
+      
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/goals?userId=${userInfo.id}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(goalData),
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || 
+          (response.status === 400 ? 'Dados inválidos fornecidos' :
+           response.status === 401 ? 'Não autorizado' :
+           response.status === 403 ? 'Acesso negado' :
+           response.status === 409 ? 'Já existe uma meta para este tipo e mês' :
+           response.status === 500 ? 'Erro interno do servidor' :
+           'Erro ao criar meta');
+        throw new Error(errorMessage);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goals-table'] });
+    },
+  });
+}
+
+export function useDeleteGoalMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (goalId) => {
+      const userInfo = getUserInfo();
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/goals/{id}?id=${goalId}&userId=${userInfo.id}`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Erro ao deletar meta');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goals-table'] });
+    },
+  });
+}
+
+export function useUpdateGoalMutation() {
+  const { authenticatedFetch, getUserInfo } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ goalId, goalData }) => {
+      const userInfo = getUserInfo();
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/goals/${goalId}?id=${goalId}&userId=${userInfo.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(goalData),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao atualizar meta');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goals-table'] });
     },
   });
 }
