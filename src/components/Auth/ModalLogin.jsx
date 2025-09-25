@@ -59,7 +59,7 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
       avatar: null,
     },
   });
-  
+
   if (!isOpen) return null;
 
   const handleForgotPassword = () => {
@@ -114,21 +114,21 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
       formData.append('name', data.name);
       formData.append('email', data.email);
       formData.append('password', data.password);
-      
+
       if (data.avatar) {
         formData.append('avatar', data.avatar);
       }
 
       const response = await createUser(formData);
-      
+
       if (response && !response.error) {
         toast.success("Conta criada com sucesso!", {
           description: "Agora você pode fazer login com suas credenciais"
         });
-        
+
         registerForm.reset();
         document.getElementById("file-name").textContent = "Nenhum arquivo escolhido";
-        
+
         setTimeout(() => {
           setTab('login');
         }, 2000);
@@ -145,10 +145,10 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center"
     >
       <div
-        className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+        className="bg-white rounded-lg p-6 max-w-lg w-full mx-4"
       >
         <div className="relative mb-4">
           <h2 className="text-xl font-semibold text-center w-full">
@@ -163,7 +163,7 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
           </button>
         </div>
 
-        <div className="flex w-full max-w-sm flex-col gap-6">
+        <div className="flex w-full max-w-md flex-col gap-6">
           <Tabs value={tab} onValueChange={setTab} defaultValue="login">
             <TabsList>
               <TabsTrigger value="login">Login</TabsTrigger>
@@ -181,9 +181,9 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                           <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Input 
+                              <Input
                                 type="email"
-                                placeholder="Ex.: example@gmail.com" 
+                                placeholder="Ex.: example@gmail.com"
                                 {...field}
                               />
                             </FormControl>
@@ -217,7 +217,7 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                       />
                       <div className="flex justify-between ">
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="terms" className={"mb-6"}/>
+                          <Checkbox id="terms" className={"mb-6"} />
                           <Label htmlFor="terms" className={"mt-0.5 mb-6"}>Lembre-me</Label>
                         </div>
                         <div className="text-sm underline text-blue-400 hover:text-blue-600 duration-200 mb-6">
@@ -226,10 +226,10 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <ButtonC 
-                        texto={isLoading ? "Entrando..." : "Entrar"} 
-                        largura="334.4px" 
-                        altura="40px" 
+                      <ButtonC
+                        texto={isLoading ? "Entrando..." : "Entrar"}
+                        largura="100%"
+                        altura="40px"
                         type="submit"
                         disabled={isLoading}
                       />
@@ -250,9 +250,9 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                           <FormItem>
                             <FormLabel>Nome *</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="text" 
-                                placeholder="Ex.: João Silva" 
+                              <Input
+                                type="text"
+                                placeholder="Ex.: João Silva"
                                 {...field}
                               />
                             </FormControl>
@@ -267,9 +267,9 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                           <FormItem>
                             <FormLabel>Email *</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="email" 
-                                placeholder="Ex.: example@gmail.com" 
+                              <Input
+                                type="email"
+                                placeholder="Ex.: example@gmail.com"
                                 {...field}
                               />
                             </FormControl>
@@ -296,7 +296,7 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                               onClick={() => setShowPassword(!showPassword)}
                               className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
                             >
-                              {showPassword ? <EyeOff size={18} className='mt-1'/> : <Eye size={18} className='mt-1'/>}
+                              {showPassword ? <EyeOff size={18} className='mt-1' /> : <Eye size={18} className='mt-1' />}
                             </button>
                             <FormMessage />
                           </FormItem>
@@ -320,7 +320,7 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                               onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
                               className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
                             >
-                              {showPasswordConfirm ? <EyeOff size={18} className='mt-1' /> : <Eye size={18} className='mt-1'/>}
+                              {showPasswordConfirm ? <EyeOff size={18} className='mt-1' /> : <Eye size={18} className='mt-1' />}
                             </button>
                             <FormMessage />
                           </FormItem>
@@ -364,10 +364,10 @@ export function ModalLogin({ isOpen, onClose, onForgotPassword }) {
                       />
                     </CardContent>
                     <CardFooter>
-                      <ButtonC 
-                        texto={isLoading ? "Criando conta..." : "Criar conta"} 
-                        largura="334.4px" 
-                        altura="34px" 
+                      <ButtonC
+                        texto={isLoading ? "Criando conta..." : "Criar conta"}
+                        largura="100%"
+                        altura="34px"
                         type="submit"
                         disabled={isLoading}
                       />
