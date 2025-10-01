@@ -9,7 +9,7 @@ const Header = memo(({ onLoginClick }) => {
           Financial Record
       </div>
       <div className='mr-[184px]'>
-        <ButtonC texto="Login" largura="110px" altura="34px" onClick={onLoginClick} />
+        <ButtonC texto="Login" largura="110px" altura="40px" onClick={onLoginClick} />
       </div>
     </nav>
   );
