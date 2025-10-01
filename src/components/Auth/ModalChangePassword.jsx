@@ -157,7 +157,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
                         >
                           {showPasswordConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
-                        <FormMessage />
+                        <FormMessage className="mb-6 -mt-4" />
                       </FormItem>
                     )}
                   />

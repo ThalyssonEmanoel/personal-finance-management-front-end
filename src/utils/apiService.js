@@ -3,7 +3,7 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 export const apiService = {
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -15,20 +15,18 @@ export const apiService = {
     if (options.body && typeof options.body === 'object') {
       config.body = JSON.stringify(options.body);
     }
+    const response = await fetch(url, config);
+    const data = await response.json();
 
-    try {
-      const response = await fetch(url, config);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Erro na requisição');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Erro na API:', error);
-      throw error;
+    if (!response.ok) {
+      console.error('Erro na requisição:', JSON.stringify(data));
+      const errorMsg =
+        Array.isArray(data.message) && data.message.length > 0
+          ? data.message[0].message
+          : data.message;
+      throw new Error(errorMsg);
     }
+    return data;
   },
 
   async get(endpoint, options = {}) {
@@ -60,7 +58,7 @@ export const forgotUserPassword = async (email) => {
 export const resetPassword = async (email, code, password) => {
   return apiService.post('/reset-password', { email, code, password });
 };
- 
+
 export const refreshUserToken = async (refreshToken) => {
   return apiService.post('/refresh-token', { refreshToken });
 };
@@ -71,13 +69,13 @@ export const logoutUser = async (id) => {
 
 export const createUser = async (formData) => {
   const url = `${API_BASE_URL}/users`;
-  
+
   try {
     const response = await fetch(url, {
       method: 'POST',
-      body: formData, 
+      body: formData,
     });
-    
+
     const data = await response.json();
 
     if (!response.ok) {
