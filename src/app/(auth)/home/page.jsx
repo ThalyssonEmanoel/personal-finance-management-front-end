@@ -115,7 +115,7 @@ const HomePage = memo(() => {
       </section>
       
       <section 
-        className="mt-6 px-20 grid md:grid-cols-3 gap-6"
+        className="px-20 -mt-1 grid md:grid-cols-3 gap-6"
         aria-label="Resumo financeiro"
         style={{ minHeight: '120px' }} // Altura fixa para evitar layout shift
       >
@@ -150,7 +150,7 @@ const HomePage = memo(() => {
       <section 
         className="mt-10 mb-10"
         aria-label="Gráficos e análises"
-        style={{ minHeight: '400px' }} // Altura mínima para evitar layout shift
+        style={{ minHeight: '400px' }} 
       >
         <Suspense fallback={<LoadingFallback />}>
           <ChartsSection

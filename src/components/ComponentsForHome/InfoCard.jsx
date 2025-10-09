@@ -1,12 +1,11 @@
 import React, { memo } from 'react'
 import { useStableDimensions } from '@/hooks/usePerformanceOptimization';
 
-const InfoCard = memo(({ title, value, isPositive, top3, ariaLabel }) => {
+const InfoCard = memo(({ title, value, isPositive, ariaLabel }) => {
   const valueColor = isPositive ? 'text-green-600' : 'text-red-600';
   
-  // Hook para dimensões estáveis e prevenção de layout shift
   const { dimensions, elementRef } = useStableDimensions({
-    minHeight: '10rem' // Altura mínima consistente
+    minHeight: '10rem' 
   });
 
   return (
@@ -32,20 +31,6 @@ const InfoCard = memo(({ title, value, isPositive, top3, ariaLabel }) => {
       >
         {value}
       </div>
-      {top3 && (
-        <div 
-          className="absolute right-6 pr-10"
-          aria-label="Top 3 categorias"
-        >
-          <ul className="list-decimal list-inside flex flex-col justify-center text-gray-700 leading-relaxed">
-            {top3.map((item, idx) => (
-              <li key={idx} role="listitem">
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 });
