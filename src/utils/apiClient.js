@@ -450,9 +450,12 @@ export function useGoalsQuery(filters, transactionType) {
       const data = await response.json();
       if (data.error) throw new Error(data.message || 'Erro na resposta da API');
 
+      console.log(data.total?.years);
+      
       return {
         goals: data.data || [],
-        total: data.total || 0,
+        total: data.total?.total || 0,
+        years: data.total?.years || [], 
       };
     },
     placeholderData: (previousData) => previousData,
