@@ -49,7 +49,7 @@ export function ColumnChart({ filters, type = "expense" }) {
         color: type === "income" ? "#7BF1A8" : "#FFB86A",
       },
       transacoes: {
-        label: "Transações",
+        label: type === "income" ? "Receitas" : "Despesas",
         color: type === "income" ? "#00C950" : "#FF6900", 
       },
     };
@@ -73,10 +73,8 @@ export function ColumnChart({ filters, type = "expense" }) {
     return months;
   };
 
-// ...existing code...
-
-const generateYearOptions = () => {
-    if (allGoalsData?.years) {
+  const generateYearOptions = () => {
+    if (allGoalsData?.years && Array.isArray(allGoalsData.years)) {
       return allGoalsData.years
         .map(year => {
           const fullYear = year < 100 ? 2000 + year : year;

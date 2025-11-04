@@ -449,8 +449,6 @@ export function useGoalsQuery(filters, transactionType) {
 
       const data = await response.json();
       if (data.error) throw new Error(data.message || 'Erro na resposta da API');
-
-      console.log(data.total?.years);
       
       return {
         goals: data.data || [],
@@ -508,14 +506,16 @@ export function useGoalsTableQuery(filters = {}) {
       const data = await response.json();
       if (data.error) throw new Error(data.error);
 
+      const totalValue = typeof data.total === 'object' ? (data.total?.total || 0) : (data.total || 0);
+
       return {
         data: data.data || [],
-        total: data.total || 0,
+        total: totalValue,
         pagination: {
           page: data.page || currentFilters.page || 1,
-          total: data.total || 0,
+          total: totalValue,
           limit: data.limit || currentFilters.limit || 5,
-          total_pages: data.total_pages || Math.ceil((data.total || 0) / (data.limit || currentFilters.limit || 5)),
+          total_pages: data.total_pages || Math.ceil(totalValue / (data.limit || currentFilters.limit || 5)),
         },
       };
     },
