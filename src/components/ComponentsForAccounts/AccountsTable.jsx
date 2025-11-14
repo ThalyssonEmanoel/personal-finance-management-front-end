@@ -178,7 +178,11 @@ const AccountsTable = ({ onAccountChange }) => {
         );
       },
       cell: ({ row }) => {
-        return React.createElement("div", { className: "font-medium" }, row.getValue("name"));
+        const name = row.getValue("name");
+        return React.createElement("div", { 
+          className: "font-medium",
+          title: name // Tooltip para textos longos
+        }, name);
       },
     },
     {
@@ -199,7 +203,13 @@ const AccountsTable = ({ onAccountChange }) => {
           )
         );
       },
-      cell: ({ row }) => React.createElement("div", { className: "capitalize" }, getAccountTypeDisplay(row.getValue("type"))),
+      cell: ({ row }) => {
+        const typeDisplay = getAccountTypeDisplay(row.getValue("type"));
+        return React.createElement("div", { 
+          className: "capitalize",
+          title: typeDisplay // Tooltip para o tipo
+        }, typeDisplay);
+      },
     },
     {
       accessorKey: "paymentMethods",
@@ -349,7 +359,7 @@ const AccountsTable = ({ onAccountChange }) => {
         </div>
         
         <div className="overflow-hidden rounded-md">
-          <Table>
+          <Table className="fixed-table-layout accounts-table">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>

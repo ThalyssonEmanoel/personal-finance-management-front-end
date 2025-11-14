@@ -162,9 +162,11 @@ const TransfersTable = ({ onTransferChange }) => {
       },
       cell: ({ row }) => {
         const transfer = row.original;
-        return React.createElement("div", { className: "font-medium" }, 
-          transfer.sourceAccount?.name || 'N/A'
-        );
+        const sourceName = transfer.sourceAccount?.name || 'N/A';
+        return React.createElement("div", { 
+          className: "font-medium",
+          title: sourceName // Tooltip
+        }, sourceName);
       },
       sortingFn: (rowA, rowB) => {
         const nameA = rowA.original.sourceAccount?.name || '';
@@ -192,9 +194,11 @@ const TransfersTable = ({ onTransferChange }) => {
       },
       cell: ({ row }) => {
         const transfer = row.original;
-        return React.createElement("div", { className: "font-medium" }, 
-          transfer.destinationAccount?.name || 'N/A'
-        );
+        const destName = transfer.destinationAccount?.name || 'N/A';
+        return React.createElement("div", { 
+          className: "font-medium",
+          title: destName // Tooltip
+        }, destName);
       },
       sortingFn: (rowA, rowB) => {
         const nameA = rowA.original.destinationAccount?.name || '';
@@ -349,7 +353,7 @@ const TransfersTable = ({ onTransferChange }) => {
         </div>
 
         <div className="overflow-hidden rounded-md">
-          <Table>
+          <Table className="fixed-table-layout transfers-table">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>

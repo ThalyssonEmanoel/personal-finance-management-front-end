@@ -20,13 +20,10 @@ const FiltersSection = memo(({ onFiltersChange }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { data: accountsData, isLoading: accountsLoading, isError, error } = useAccountsQuery();
   const lastFiltersRef = useRef({});
-  
-  // Hook para dimensões estáveis e prevenção de layout shift
   const { dimensions, elementRef } = useStableDimensions({
-    minHeight: '120px' // Altura mínima para evitar layout shift
+    minHeight: '120px' 
   });
 
-  // Memoização dos dados de contas para evitar re-renders
   const accountItems = useMemo(() => {
     const accounts = accountsData?.accounts ?? [];
     return [
@@ -44,7 +41,6 @@ const FiltersSection = memo(({ onFiltersChange }) => {
       release_date: date ? date.toISOString().split('T')[0] : undefined
     };
     
-    // Debounce para evitar muitas chamadas
     const timeoutId = setTimeout(() => {
       if (JSON.stringify(filters) !== JSON.stringify(lastFiltersRef.current)) {
         lastFiltersRef.current = filters;

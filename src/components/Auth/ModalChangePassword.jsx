@@ -61,7 +61,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
         <div className="relative mb-4">
           <h2 className="text-xl font-semibold text-center w-full">
             Alterar Senha
@@ -75,7 +75,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
           </button>
         </div>
 
-        <div className="flex w-full max-w-sm flex-col gap-6">
+        <div className="flex w-full max-w-md flex-col gap-6">
           <Card>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleChangePassword)}>
@@ -157,7 +157,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
                         >
                           {showPasswordConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
-                        <FormMessage />
+                        <FormMessage className="mb-6 -mt-4" />
                       </FormItem>
                     )}
                   />
@@ -165,7 +165,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
                 <CardFooter>
                   <ButtonC
                     texto={isLoading ? "Alterando..." : "Alterar"}
-                    largura="334.4px"
+                    largura="100%"
                     altura="40px"
                     type="submit"
                     disabled={isLoading}

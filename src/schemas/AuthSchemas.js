@@ -10,7 +10,7 @@ export const forgotPasswordSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  code: z.string().min(1, "Código é obrigatório"),
+  code: z.string().min(6, "Código deve ter exatamente 6 caracteres").max(6, "Código deve ter exatamente 6 caracteres"),
   password: z
     .string()
     .min(8, "Senha deve ter no mínimo 8 caracteres")

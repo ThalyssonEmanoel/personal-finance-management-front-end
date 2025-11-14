@@ -262,21 +262,30 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
       header: ({ column }) => (
         <SortableHeader column={column}>Nome</SortableHeader>
       ),
-      cell: ({ row }) => <div>{row.getValue("name")}</div>,
+      cell: ({ row }) => {
+        const name = row.getValue("name");
+        return <div title={name}>{name}</div>;
+      },
     },
     {
       accessorKey: "category",
       header: ({ column }) => (
         <SortableHeader column={column}>Categoria</SortableHeader>
       ),
-      cell: ({ row }) => <div>{row.getValue("category")}</div>,
+      cell: ({ row }) => {
+        const category = row.getValue("category");
+        return <div title={category}>{category}</div>;
+      },
     },
     {
       accessorKey: "account",
       header: ({ column }) => (
         <SortableHeader column={column}>Conta</SortableHeader>
       ),
-      cell: ({ row }) => <div>{row.original.account?.name || "N/A"}</div>,
+      cell: ({ row }) => {
+        const accountName = row.original.account?.name || "N/A";
+        return <div title={accountName}>{accountName}</div>;
+      },
       accessorFn: (row) => row.account?.name || "N/A",
     },
     {
@@ -459,6 +468,7 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
           
           <div className="overflow-hidden rounded-md">
             <Table 
+              className="fixed-table-layout transactions-table"
               role="table" 
               aria-label="Lista de transações"
               aria-rowcount={filteredTransactions.length + 1}

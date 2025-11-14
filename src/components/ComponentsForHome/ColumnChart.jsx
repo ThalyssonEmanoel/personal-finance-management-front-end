@@ -17,25 +17,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useGoalsQuery, useTransactionsChartQuery } from "@/utils/apiClient";
+import { useGoalsQuery } from "@/utils/apiClient";
 import Decimal from "decimal.js";
 
 export function ColumnChart({ filters, type = "expense" }) {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
-  
-  // Criar a data formatada para a API 
   const goalsDateFilter = selectedMonth && selectedYear ? 
     `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01` : '';
-  
   const goalsFilters = {
     ...filters,
     goalsDate: goalsDateFilter
   };
-
   const { data: goalsData, isLoading: isGoalsLoading } = useGoalsQuery(goalsFilters, type);
-  const { data: transactionsData, isLoading: isTransactionsLoading } = useTransactionsChartQuery(filters);
-
+  const allGoalsFilters = {
+    ...filters,
+    goalsDate: ''
+  };
+  const { data: allGoalsData } = useGoalsQuery(allGoalsFilters, type);
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -50,7 +49,7 @@ export function ColumnChart({ filters, type = "expense" }) {
         color: type === "income" ? "#7BF1A8" : "#FFB86A",
       },
       transacoes: {
-        label: "Transações",
+        label: type === "income" ? "Receitas" : "Despesas",
         color: type === "income" ? "#00C950" : "#FF6900", 
       },
     };
@@ -75,19 +74,16 @@ export function ColumnChart({ filters, type = "expense" }) {
   };
 
   const generateYearOptions = () => {
-    if (!transactionsData?.transactions) return [];
+    if (allGoalsData?.years && Array.isArray(allGoalsData.years)) {
+      return allGoalsData.years
+        .map(year => {
+          const fullYear = year < 100 ? 2000 + year : year;
+          return { value: fullYear, label: fullYear.toString() };
+        })
+        .sort((a, b) => b.value - a.value); 
+    }
     
-    const years = new Set();
-    transactionsData.transactions.forEach(transaction => {
-      if (transaction.release_date) {
-        const year = new Date(transaction.release_date).getFullYear();
-        years.add(year);
-      }
-    });
-    
-    return Array.from(years)
-      .sort((a, b) => b - a) 
-      .map(year => ({ value: year, label: year.toString() }));
+    return [];
   };
 
   const getDateRangeText = () => {
@@ -103,7 +99,7 @@ export function ColumnChart({ filters, type = "expense" }) {
   };
 
   const processChartData = () => {
-    if (!goalsData?.goals || !transactionsData?.transactions) return [];
+    if (!goalsData?.goals) return [];
 
     const filteredGoals = goalsData.goals.filter(goal => goal.transaction_type === type);
     const monthlyData = {};
@@ -146,7 +142,7 @@ export function ColumnChart({ filters, type = "expense" }) {
   const chartData = processChartData();
   const chartConfig = getChartConfig();
 
-  const isLoading = isGoalsLoading || isTransactionsLoading;
+  const isLoading = isGoalsLoading;
 
   if (isLoading) {
     return (

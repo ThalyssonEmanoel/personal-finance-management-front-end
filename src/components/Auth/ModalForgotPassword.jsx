@@ -58,7 +58,7 @@ export function ModalForgotPassword({ isOpen, onClose, onSendCode }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
         <div className="relative mb-4">
           <h2 className="text-xl font-semibold text-center w-full">
             Recuperar senha
@@ -72,7 +72,7 @@ export function ModalForgotPassword({ isOpen, onClose, onSendCode }) {
           </button>
         </div>
 
-        <div className="flex w-full max-w-sm flex-col gap-6">
+        <div className="flex w-full max-w-md flex-col gap-6">
           <Card>
             <CardHeader>
               <CardDescription>
@@ -115,7 +115,7 @@ export function ModalForgotPassword({ isOpen, onClose, onSendCode }) {
                 <CardFooter>
                   <ButtonC
                     texto={isLoading ? "Enviando..." : "Enviar código"}
-                    largura="334.4px"
+                    largura="100%"
                     altura="40px"
                     type="submit"
                     disabled={isLoading}

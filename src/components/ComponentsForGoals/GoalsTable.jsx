@@ -201,7 +201,7 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
               className={`w-3 h-20 rounded-l-md bg-blue-300`}
               aria-hidden="true"
             />
-            <span className="pl-4 capitalize">{name}</span>
+            <span className="pl-4 capitalize" title={name}>{name}</span>
           </div>
         );
       }
@@ -401,6 +401,7 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
 
           <div className="overflow-hidden  rounded-md">
             <Table
+              className="fixed-table-layout goals-table"
               role="table"
               aria-label="Lista de metas"
               aria-rowcount={filteredGoals.length + 1}

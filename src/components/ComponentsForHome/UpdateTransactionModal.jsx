@@ -587,7 +587,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                   control={form.control}
                   name="recurring_type"
                   render={({ field }) => (
-                    <FormItem className="ml-6">
+                    <FormItem>
                       <FormLabel>Tipo de Recorrência</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
