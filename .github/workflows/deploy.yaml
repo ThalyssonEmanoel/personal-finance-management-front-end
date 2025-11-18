@@ -27,10 +27,12 @@ jobs:
 
       - name: Criar arquivo de variáveis de ambiente para Cypress
         run: |
-          echo "{" > cypress.env.json
-          echo "  \"email\": \"dev12AB@gmail.com"," >> cypress.env.json
-          echo "  \"password\": \"Senha@12345\"" >> cypress.env.json
-          echo "}" >> cypress.env.json
+          cat > cypress.env.json << EOF
+          {
+            "email": "${{ secrets.CYPRESS_TEST_EMAIL }}",
+            "password": "${{ secrets.CYPRESS_TEST_PASSWORD }}"
+          }
+          EOF
 
       - name: Criar arquivo .env.local
         run: |
