@@ -8,7 +8,13 @@
     "build:analyze": "ANALYZE=true next build",
     "start": "next start",
     "lint": "next lint",
-    "optimize-images": "next-optimized-images"
+    "optimize-images": "next-optimized-images",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:dev": "cypress run --env baseUrl=http://localhost:3000",
+    "cypress:run:prod": "cypress run --env baseUrl=https://personal-finance.app.fslab.dev",
+    "test:e2e": "start-server-and-test dev http://localhost:3000 cypress:open",
+    "test:e2e:headless": "start-server-and-test dev http://localhost:3000 cypress:run"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
@@ -47,6 +53,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "cypress": "^15.6.0",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
     "tailwindcss": "^4",

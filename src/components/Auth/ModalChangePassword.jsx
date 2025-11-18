@@ -70,6 +70,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
             onClick={onClose}
             className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-2xl cursor-pointer"
             aria-label="Fechar"
+            data-cy="change-password-close-button"
           >
             ×
           </button>
@@ -101,6 +102,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
                             type="text"
                             placeholder="Digite o código"
                             disabled={isLoading}
+                            data-cy="change-password-code-input"
                             {...field}
                           />
                         </FormControl>
@@ -120,6 +122,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
                             className="pr-10 "
                             placeholder="Mínimo 8 caracteres com maiúscula, minúscula, número e caractere especial"
                             disabled={isLoading}
+                            data-cy="change-password-new-password-input"
                             {...field}
                           />
                         </FormControl>
@@ -128,6 +131,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
                           disabled={isLoading}
+                          data-cy="change-password-toggle-password-visibility"
                         >
                           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
@@ -146,6 +150,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
                             type={showPasswordConfirm ? "text" : "password"}
                             className="pr-10 mb-6"
                             disabled={isLoading}
+                            data-cy="change-password-confirm-password-input"
                             {...field}
                           />
                         </FormControl>
@@ -154,6 +159,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
                           onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
                           className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
                           disabled={isLoading}
+                          data-cy="change-password-toggle-confirm-password-visibility"
                         >
                           {showPasswordConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
@@ -169,6 +175,7 @@ export function ModalChangePassword({ isOpen, onClose, email }) {
                     altura="40px"
                     type="submit"
                     disabled={isLoading}
+                    data-cy="change-password-submit-button"
                   />
                 </CardFooter>
               </form>

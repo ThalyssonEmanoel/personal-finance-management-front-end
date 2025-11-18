@@ -67,6 +67,7 @@ export function ModalForgotPassword({ isOpen, onClose, onSendCode }) {
             onClick={onClose}
             className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-2xl cursor-pointer"
             aria-label="Fechar"
+            data-cy="forgot-password-close-button"
           >
             ×
           </button>
@@ -103,6 +104,7 @@ export function ModalForgotPassword({ isOpen, onClose, onSendCode }) {
                             type="email"
                             placeholder="Ex.: example@gmail.com"
                             disabled={isLoading}
+                            data-cy="forgot-password-email-input"
                             {...field}
                             className={`mb-8`}
                           />
@@ -119,6 +121,7 @@ export function ModalForgotPassword({ isOpen, onClose, onSendCode }) {
                     altura="40px"
                     type="submit"
                     disabled={isLoading}
+                    data-cy="forgot-password-submit-button"
                   />
                 </CardFooter>
               </form>
