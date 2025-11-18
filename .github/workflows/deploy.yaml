@@ -36,10 +36,12 @@ jobs:
 
       - name: Criar arquivo .env.local
         run: |
-          cp .env.example .env.local
-          echo "AUTH_SECRET=${{ secrets.AUTH_SECRET }}" >> .env.local
-          echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" >> .env.local
-          echo "NEXTAUTH_URL=http://localhost:3000" >> .env.local
+          cat > .env.local << EOF
+          AUTH_SECRET=${{ secrets.AUTH_SECRET }}
+          AUTH_URL=http://localhost:3000
+          NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXTAUTH_URL=http://localhost:3000
+          EOF
 
       - name: Executar testes do Cypress
         uses: cypress-io/github-action@v6
@@ -51,6 +53,11 @@ jobs:
           browser: chrome
           config-file: cypress.config.js
           spec: cypress/e2e/auth/**/*.cy.js
+        env:
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          AUTH_URL: http://localhost:3000
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXTAUTH_URL: http://localhost:3000
 
       - name: Upload screenshots de falhas
         uses: actions/upload-artifact@v4
