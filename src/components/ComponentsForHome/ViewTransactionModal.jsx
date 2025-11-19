@@ -45,7 +45,7 @@ const ViewTransactionModal = ({ isOpen, onClose, transaction }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" data-cy="view-transaction-modal">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-gray-800">
             Detalhes da transação

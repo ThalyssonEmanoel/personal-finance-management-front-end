@@ -52,7 +52,7 @@ jobs:
           wait-on-timeout: 120
           browser: chrome
           config-file: cypress.config.js
-          spec: cypress/e2e/auth/**/*.cy.js
+          spec: cypress/e2e/**/*.cy.js
         env:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           AUTH_URL: http://localhost:3000

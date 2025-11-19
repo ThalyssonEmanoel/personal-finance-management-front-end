@@ -78,6 +78,7 @@ const CurrencyInput = memo(({ field, ...props }) => {
       onBlur={field.onBlur}
       ref={field.ref}
       aria-describedby="value-help"
+      data-cy="transaction-value-input"
       {...props}
     />
   );
@@ -104,6 +105,7 @@ const DatePicker = memo(({ field, dateOpen, setDateOpen }) => {
             aria-label={field.value ? `Data selecionada: ${new Date(field.value + 'T00:00:00').toLocaleDateString('pt-BR')}` : "Selecionar data da transação"}
             aria-expanded={dateOpen}
             aria-haspopup="dialog"
+            data-cy="transaction-date-picker"
           >
             {field.value ? new Date(field.value + 'T00:00:00').toLocaleDateString('pt-BR') : "Selecionar data"}
             <CalendarIcon className="h-4 w-4" aria-hidden="true" />
@@ -328,6 +330,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                       placeholder="Selecione o tipo"
                       ariaLabel="Tipo de transação"
                       className="w-full"
+                      dataCy="transaction-type-select"
                     />
                     <FormMessage />
                   </FormItem>
@@ -345,6 +348,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                         placeholder="Ex: Supermercado" 
                         {...field} 
                         aria-describedby="name-help"
+                        data-cy="transaction-name-input"
                       />
                     </FormControl>
                     <div id="name-help" className="sr-only">
@@ -371,6 +375,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                         className="w-full"
                         aria-label="Selecionar categoria"
                         aria-expanded="false"
+                        data-cy="transaction-category-trigger"
                       >
                         <span className="flex w-full items-center justify-between gap-2">
                           {field.value
@@ -383,6 +388,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                         <ComboboxInput 
                           placeholder="Buscar ou criar categoria..." 
                           aria-label="Buscar categoria"
+                          data-cy="transaction-category-search"
                         />
                         <ComboboxEmpty>
                         </ComboboxEmpty>
@@ -459,6 +465,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                         placeholder="Ex: Compra parcelada" 
                         {...field} 
                         aria-describedby="description-help"
+                        data-cy="transaction-description-input"
                       />
                     </FormControl>
                     <div id="description-help" className="sr-only">
@@ -484,6 +491,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                       className="w-full"
                       disabled={accountsLoading}
                       loading={accountsLoading}
+                      dataCy="transaction-account-select"
                     />
                     <FormMessage />
                   </FormItem>
@@ -505,6 +513,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                         ariaLabel="Forma de pagamento"
                         className="w-full"
                         disabled={!selectedAccount}
+                        dataCy="transaction-payment-method-select"
                       />
                       <FormMessage />
                     </FormItem>
@@ -528,6 +537,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                           {...field}
                           onChange={(e) => field.onChange(parseInt(e.target.value))}
                           aria-describedby="installments-help"
+                          data-cy="transaction-installments-input"
                         />
                       </FormControl>
                       <div id="installments-help" className="sr-only">
@@ -556,6 +566,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                           placeholder="Selecione a periodicidade"
                           ariaLabel="Tipo de recorrência"
                           className="w-full"
+                          dataCy="transaction-recurring-type-select"
                         />
                         <FormMessage />
                       </FormItem>
@@ -577,6 +588,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                             }
                           }}
                           aria-describedby="recurring-help"
+                          data-cy="transaction-recurring-checkbox"
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
@@ -595,6 +607,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                     checked={isInstallment}
                     onCheckedChange={handleInstallmentChange}
                     aria-describedby="installment-help"
+                    data-cy="transaction-installment-checkbox"
                   />
                   <div className="space-y-1 leading-none">
                     <Label>Parcelado</Label>
@@ -614,6 +627,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                   disabled={isPending}
                   type="button"
                   ariaLabel="Cancelar cadastro da transação"
+                  dataCy="transaction-cancel-button"
                 />
                 <ButtonC
                   texto={isPending ? "Cadastrando..." : "Lançar"}
@@ -622,6 +636,7 @@ const RegisterTransactionModal = memo(({ isOpen, onClose }) => {
                   type="submit"
                   disabled={isPending}
                   ariaLabel={isPending ? "Cadastrando transação..." : "Confirmar cadastro da transação"}
+                  dataCy="transaction-submit-button"
                 />
               </div>
             </form>

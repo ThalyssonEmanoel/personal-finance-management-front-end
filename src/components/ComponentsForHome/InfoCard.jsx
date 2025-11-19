@@ -8,6 +8,12 @@ const InfoCard = memo(({ title, value, isPositive, ariaLabel }) => {
     minHeight: '10rem' 
   });
 
+  const dataCyMap = {
+    'Saldo total': 'info-card-balance',
+    'Receitas': 'info-card-income',
+    'Despesas': 'info-card-expense'
+  };
+
   return (
     <div 
       ref={elementRef}
@@ -16,6 +22,7 @@ const InfoCard = memo(({ title, value, isPositive, ariaLabel }) => {
       role="article"
       aria-label={ariaLabel || `${title}: ${value}`}
       tabIndex="0"
+      data-cy={dataCyMap[title] || 'info-card'}
     >
       <div 
         className="text-lg font-semibold"
