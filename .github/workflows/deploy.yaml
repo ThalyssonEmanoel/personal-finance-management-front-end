@@ -7,8 +7,77 @@ on:
     branches: [ develop, master ]
 
 jobs:
+  testar-site:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')) ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'develop' || github.base_ref == 'master'))
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Criar arquivo de variáveis de ambiente para Cypress
+        run: |
+          cat > cypress.env.json << EOF
+          {
+            "email": "${{ secrets.CYPRESS_TEST_EMAIL }}",
+            "password": "${{ secrets.CYPRESS_TEST_PASSWORD }}"
+          }
+          EOF
+
+      - name: Criar arquivo .env.local
+        run: |
+          cat > .env.local << EOF
+          AUTH_SECRET=${{ secrets.AUTH_SECRET }}
+          AUTH_URL=http://localhost:3000
+          NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXTAUTH_URL=http://localhost:3000
+          EOF
+
+      - name: Executar testes do Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          build: npm run build
+          start: npm start
+          wait-on: 'http://localhost:3000'
+          wait-on-timeout: 120
+          browser: chrome
+          config-file: cypress.config.js
+          spec: cypress/e2e/**/*.cy.js
+        env:
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          AUTH_URL: http://localhost:3000
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXTAUTH_URL: http://localhost:3000
+
+      - name: Upload screenshots de falhas
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+          retention-days: 7
+
+      - name: Upload vídeos dos testes
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-videos
+          path: cypress/videos
+          retention-days: 7
+
   buildar-docker-front:
     runs-on: ubuntu-latest
+    needs: testar-site
     if: |
       (github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')) ||
       (github.event_name == 'pull_request' && (github.base_ref == 'develop' || github.base_ref == 'master'))
@@ -43,8 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: buildar-docker-front
     if: |
-      (github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')) ||
-      (github.event_name == 'pull_request' && (github.base_ref == 'develop' || github.base_ref == 'master'))
+      (github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master'))
 
     steps:
       - name: Criar pasta kube

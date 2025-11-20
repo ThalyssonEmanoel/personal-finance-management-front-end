@@ -59,6 +59,7 @@ const ActionCell = memo(({ transaction, onView, onEdit, onDelete }) => (
         variant="ghost" 
         className="h-8 w-8 p-0"
         ariaLabel={`Ações para transação ${transaction.name}`}
+        dataCy="transaction-actions-button"
       >
         <MoreHorizontal className="h-4 w-4" />
       </AccessibleButton>
@@ -73,12 +74,14 @@ const ActionCell = memo(({ transaction, onView, onEdit, onDelete }) => (
       <DropdownMenuItem
         onClick={() => onView(transaction)}
         role="menuitem"
+        data-cy="transaction-view-action"
       >
         Visualizar
       </DropdownMenuItem>
       <DropdownMenuItem
         onClick={() => onEdit(transaction)}
         role="menuitem"
+        data-cy="transaction-edit-action"
       >
         Editar
       </DropdownMenuItem>
@@ -86,6 +89,7 @@ const ActionCell = memo(({ transaction, onView, onEdit, onDelete }) => (
         onClick={() => onDelete(transaction)}
         className="text-red-600 focus:text-red-600"
         role="menuitem"
+        data-cy="transaction-delete-action"
       >
         Excluir
       </DropdownMenuItem>
@@ -420,6 +424,7 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
               ariaLabel="Filtrar por tipo de transação"
               items={typeOptions}
               className="w-56 h-10 border-2 border-neutral-300 rounded-sm"
+              dataCy="filter-transaction-type-select"
             />
           </div>
         </div>
@@ -429,7 +434,8 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
             largura="120px" 
             altura="40px" 
             type="button" 
-            onClick={() => setIsReportModalOpen(true)} 
+            onClick={() => setIsReportModalOpen(true)}
+            dataCy="download-report-button"
           />
         </div>
       </div>
@@ -455,6 +461,7 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 aria-describedby="search-help"
+                data-cy="search-transactions-input"
               />
               <Search 
                 className="absolute right-3 top-5 -translate-y-1/2 text-gray-300 w-5 h-5 pointer-events-none" 
@@ -505,6 +512,7 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
                       key={row.id} 
                       style={{ backgroundColor: "rgb(250, 249, 244)" }}
                       role="row"
+                      data-cy="transaction-row"
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id} role="gridcell">

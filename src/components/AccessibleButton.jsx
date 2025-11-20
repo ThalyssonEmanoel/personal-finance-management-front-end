@@ -14,6 +14,7 @@ const AccessibleButton = memo(forwardRef(({
   loading = false,
   ariaLabel,
   ariaDescribedBy,
+  dataCy,
   type = 'button',
   onClick,
   ...props 
@@ -56,6 +57,7 @@ const AccessibleButton = memo(forwardRef(({
       aria-describedby={ariaDescribedBy}
       aria-busy={loading}
       onClick={onClick}
+      data-cy={dataCy}
       {...props}
     >
       {loading && (

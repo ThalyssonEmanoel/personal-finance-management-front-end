@@ -1,11 +1,15 @@
 import { memo } from 'react';
 
-const ButtonC = memo(({ texto, largura, altura, onClick, dataTest = null, type = 'button', disabled = false, ariaLabel }) => {
+const ButtonC = memo(({ texto, largura, altura, onClick, dataTest = null, type = 'button', disabled = false, ariaLabel, dataCy, ...rest }) => {
+  // Extract data-cy from rest props if it exists, otherwise use dataCy
+  const finalDataCy = rest['data-cy'] || dataCy;
+  
   return (
     <button
       type={type}
       onClick={onClick}
       data-test={dataTest}
+      data-cy={finalDataCy}
       disabled={disabled}
       style={{ width: largura, height: altura }}
       className={`btn 

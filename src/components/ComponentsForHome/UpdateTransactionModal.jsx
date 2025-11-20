@@ -233,6 +233,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
         !border-r-0 !overflow-y-auto !m-0 !p-6 !translate-x-0 !translate-y-0 !z-50 !bg-background !shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out
         data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right"
         showCloseButton={true}
+        data-cy="update-transaction-modal"
       >
         <div className="space-y-10">
           <DialogHeader >
@@ -249,7 +250,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                     <FormLabel>Tipo de Transação</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger className={"w-full"}>
+                        <SelectTrigger className={"w-full"} data-cy="update-transaction-type-select">
                           <SelectValue placeholder="Selecione o tipo" />
                         </SelectTrigger>
                       </FormControl>
@@ -269,7 +270,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                   <FormItem>
                     <FormLabel>Nome da Transação</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Supermercado" {...field} />
+                      <Input placeholder="Ex: Supermercado" {...field} data-cy="update-transaction-name-input" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -287,7 +288,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                       value={field.value}
                       type="category"
                     >
-                      <ComboboxTrigger className="w-full">
+                      <ComboboxTrigger className="w-full" data-cy="update-transaction-category-trigger">
                         <span className="flex w-full items-center justify-between gap-2">
                           {field.value
                             ? (localCategories.find((item) => item.value === field.value)?.label || field.value)
@@ -375,6 +376,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                           onChange={handleChange}
                           onBlur={field.onBlur}
                           ref={field.ref}
+                          data-cy="update-transaction-value-input"
                         />
                       </FormControl>
                       <FormMessage />
@@ -395,6 +397,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                           <Button
                             variant="outline"
                             className="w-full justify-between"
+                            data-cy="update-transaction-date-picker"
                           >
                             {field.value ? new Date(field.value + 'T00:00:00').toLocaleDateString('pt-BR') : "Selecionar data"}
                             <CalendarIcon className="h-4 w-4" />
@@ -616,6 +619,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                   altura="40px"
                   onClick={onClose}
                   disabled={isPending}
+                  dataCy="update-transaction-cancel-button"
                 />
                 <ButtonC
                   texto={isPending ? "Atualizando..." : "Atualizar"}
@@ -623,6 +627,7 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                   altura="40px"
                   type="submit"
                   disabled={isPending}
+                  dataCy="update-transaction-submit-button"
                 />
               </div>
             </form>

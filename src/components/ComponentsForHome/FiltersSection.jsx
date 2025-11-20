@@ -83,6 +83,7 @@ const FiltersSection = memo(({ onFiltersChange }) => {
           error={isError ? error : null}
           groupLabel="Contas"
           id="account-select"
+          dataCy="filter-account-select"
         />
         
         <div className="flex flex-col">
@@ -100,6 +101,7 @@ const FiltersSection = memo(({ onFiltersChange }) => {
                 className="w-56 h-10 border-2 border-neutral-300 rounded-sm justify-between"
                 ariaLabel={date ? `Data selecionada: ${date.toLocaleDateString()}` : "Selecionar data das transações"}
                 ariaDescribedBy="date-help"
+                dataCy="filter-date-picker"
               >
                 {date ? date.toLocaleDateString() : "Selecionar data"}
                 <ChevronDownIcon aria-hidden="true" />
@@ -131,6 +133,7 @@ const FiltersSection = memo(({ onFiltersChange }) => {
           className="w-[160px] h-[40px] border-2 border-neutral-300 rounded-sm bg-white hover:bg-gray-50 text-black hover:cursor-pointer hover:text-white hover:shadow-md hover:bg-brown"
           ariaLabel="Abrir formulário para lançar nova transação"
           onClick={handleModalOpen}
+          dataCy="launch-transaction-button"
         >
           Lançar transação
         </AccessibleButton>

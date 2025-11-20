@@ -25,6 +25,7 @@ const AccessibleSelect = memo(forwardRef(({
   className = "w-56 h-10 border-2 border-neutral-300 rounded-sm",
   groupLabel,
   disabled = false,
+  dataCy,
   ...props 
 }, ref) => {
   
@@ -53,6 +54,7 @@ const AccessibleSelect = memo(forwardRef(({
           className={className}
           aria-label={getAccessibleLabel()}
           aria-describedby={error ? `${props.id || 'select'}-error` : undefined}
+          data-cy={dataCy}
         >
           <SelectValue placeholder={loading ? "Carregando..." : placeholder} />
         </SelectTrigger>
