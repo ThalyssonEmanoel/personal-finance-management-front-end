@@ -337,20 +337,20 @@ const AccountsTable = ({ onAccountChange }) => {
   }
 
   return (
-    <div className="border-2 border-neutral-300 rounded-md h-180 overflow-y-auto">
-      <div className="px-8 py-8">
-        <div className="flex justify-between">
+    <div className="border-2 border-neutral-300 rounded-md min-h-[400px] overflow-y-auto">
+      <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-xl font-semibold mb-2">Contas existentes</h2>
-            <p className="text-sm text-muted-foreground mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold mb-2">Contas existentes</h2>
+            <p className="text-sm text-muted-foreground">
               Você possui um total de {accountsData.length} contas cadastradas.
             </p>
           </div>
-          <div className="relative w-56">
+          <div className="relative w-full sm:w-56">
             <Input
               type="text"
               placeholder="Ex: Caixa Econômica"
-              className="border-2 border-neutral-300 rounded-md w-56 h-10 pr-10"
+              className="border-2 border-neutral-300 rounded-md w-full sm:w-56 h-10 pr-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -358,7 +358,8 @@ const AccountsTable = ({ onAccountChange }) => {
           </div>
         </div>
         
-        <div className="overflow-hidden rounded-md">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-hidden rounded-md">
           <Table className="fixed-table-layout accounts-table">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -402,6 +403,87 @@ const AccountsTable = ({ onAccountChange }) => {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-4">
+          {filteredAccounts.length > 0 ? (
+            filteredAccounts.map((account) => {
+              const fileName = account.icon ? account.icon.replace(/src[\\\\/]uploads[\\\\/]|src[\\\\/]seed[\\\\/]images[\\\\/]|uploads[\\\\/]/g, '') : 'avatar1.jpeg';
+              const imageUrl = `${process.env.NEXT_PUBLIC_API_URL}/uploads/${fileName}`;
+              const balance = parseFloat(account.balance) || 0;
+              const isNegative = balance < 0;
+              const formatted = formatCurrency(Math.abs(balance));
+
+              return (
+                <div 
+                  key={account.id} 
+                  className="bg-[#FAF9F4] rounded-lg border-2 border-neutral-300 p-4"
+                >
+                  {/* Header do card */}
+                  <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-200">
+                    <img
+                      src={imageUrl}
+                      alt={account.name}
+                      className="w-14 h-14 rounded-full object-cover border-2 border-solid border-tertiary"
+                      onError={(e) => {
+                        e.target.src = `${process.env.NEXT_PUBLIC_API_URL}/uploads/avatar1.jpeg`;
+                      }}
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-base">{account.name}</h3>
+                      <p className="text-sm text-gray-600 capitalize">
+                        {getAccountTypeDisplay(account.type)}
+                      </p>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleViewClick(account)}>
+                          Visualizar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditClick(account)}>
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteClick(account)}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Informações */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Métodos de Pagamento:</span>
+                      <span className="font-medium">
+                        {account.accountPaymentMethods ? account.accountPaymentMethods.length : 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                      <span className="text-gray-600 text-sm">Saldo:</span>
+                      <span className={`font-bold text-lg ${getBalanceColor(account.balance)}`}>
+                        {isNegative ? `- ${formatted}` : `+ ${formatted}`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center py-8">
+              Nenhuma conta encontrada.
+            </div>
+          )}
         </div>
       </div>
 

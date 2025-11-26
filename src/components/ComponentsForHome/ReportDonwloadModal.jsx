@@ -218,7 +218,7 @@ export function ReportDownloadModal({ isOpen, onClose }) {
                 altura="40px"
                 type="button"
                 onClick={handleClose}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-700"
+                className="w-full sm:w-[160px] h-[40px] border-2 border-neutral-300 rounded-sm bg-white text-black hover:cursor-pointer hover:text-white hover:shadow-md hover:bg-brown"
               />
               <ButtonC
                 texto={isPending ? "Baixando..." : "Baixar Extrato"}

@@ -331,20 +331,20 @@ const TransfersTable = ({ onTransferChange }) => {
   }
 
   return (
-    <div className="border-2 border-neutral-300 rounded-md h-180 overflow-y-auto">
-      <div className="px-8 py-8">
-        <div className="flex justify-between">
+    <div className="border-2 border-neutral-300 rounded-md min-h-[400px] overflow-y-auto">
+      <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-xl font-semibold mb-2">Transferências realizadas</h2>
-            <p className="text-sm text-muted-foreground mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold mb-2">Transferências realizadas</h2>
+            <p className="text-sm text-muted-foreground">
               Você possui um total de {transfersData.length} transferências realizadas.
             </p>
           </div>
-          <div className="relative w-56">
+          <div className="relative w-full sm:w-56">
             <Input
               type="text"
               placeholder="Ex: mercado"
-              className="border-2 border-neutral-300 rounded-md w-56 h-10 pr-10"
+              className="border-2 border-neutral-300 rounded-md w-full sm:w-56 h-10 pr-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -352,7 +352,8 @@ const TransfersTable = ({ onTransferChange }) => {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-md">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-hidden rounded-md">
           <Table className="fixed-table-layout transfers-table">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -396,6 +397,95 @@ const TransfersTable = ({ onTransferChange }) => {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-4">
+          {filteredTransfers.length > 0 ? (
+            filteredTransfers.map((transfer) => {
+              const formatted = formatCurrency(transfer.amount);
+
+              return (
+                <div 
+                  key={transfer.id} 
+                  className="bg-[#FAF9F4] rounded-lg border-2 border-neutral-300 p-4 relative"
+                >
+                  {/* Barra lateral colorida */}
+                  <div
+                    className="absolute left-0 top-0 bottom-0 w-2 rounded-l-lg bg-yellow-200"
+                    aria-hidden="true"
+                  />
+                  
+                  {/* Header do card */}
+                  <div className="flex justify-between items-start mb-3 pl-2">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-base text-gray-900">Transferência</h3>
+                      <p className="text-sm text-gray-600">
+                        {formatDate(transfer.transfer_date)}
+                      </p>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleViewClick(transfer)}>
+                          Visualizar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditClick(transfer)}>
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteClick(transfer)}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Informações */}
+                  <div className="pl-2 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Origem:</span>
+                      <span className="font-medium text-right">
+                        {transfer.sourceAccount?.name || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Destino:</span>
+                      <span className="font-medium text-right">
+                        {transfer.destinationAccount?.name || 'N/A'}
+                      </span>
+                    </div>
+                    {transfer.description && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Descrição:</span>
+                        <span className="font-medium text-right truncate max-w-[60%]">
+                          {transfer.description}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                      <span className="text-gray-600 text-sm">Valor:</span>
+                      <span className="font-bold text-lg text-gray-800">
+                        {formatted}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center py-8">
+              Nenhuma transferência encontrada.
+            </div>
+          )}
         </div>
       </div>
 

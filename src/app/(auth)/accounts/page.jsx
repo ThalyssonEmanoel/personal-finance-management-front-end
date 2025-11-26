@@ -21,7 +21,7 @@ const RegisterTransferModal = React.lazy(() => import("@/components/ComponentsFo
 
 // Loading fallback otimizado
 const LoadingFallback = memo(() => (
-  <div 
+  <div
     className="flex flex-col items-center justify-center"
     style={{ minHeight: '400px' }}
   >
@@ -75,33 +75,32 @@ export default function AccountsPage() {
   }
 
   return (
-    <div className="px-20 mt-10 mb-10">
-      <div className="flex justify-between items-center mb-6">
+    <div className="px-4 sm:px-6 lg:px-20 mt-10 mb-10">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
         <div className="flex flex-col">
           <label htmlFor="account-filter" className="mb-2 text-base font-medium text-gray-700">Listar</label>
           <Select value={selectedFilter} onValueChange={setSelectedFilter}>
-            <SelectTrigger 
+            <SelectTrigger
               id="account-filter"
-              className="w-56 h-10 border-2 border-neutral-300 rounded-sm"
+              className="w-full sm:w-56 h-10 border-2 border-neutral-300 rounded-sm"
               aria-label="Filtrar por tipo de conta ou transferência"
             >
               <SelectValue placeholder="Todas as contas" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                  <SelectItem value="contas">Contas</SelectItem>
-                  <SelectItem value="transferencias">Transferências entre contas</SelectItem>
+                <SelectItem value="contas">Contas</SelectItem>
+                <SelectItem value="transferencias">Transferências entre contas</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
         </div>
-        <div>
+        <div className="w-full sm:w-auto">
           <ButtonC
             texto={selectedFilter === "contas" ? "Cadastrar conta" : "Nova transferência"}
-            largura="140px"
-            altura="40px"
             type="button"
             onClick={handleCreateAction}
+            className="w-full sm:w-[160px] h-[40px] border-2 border-neutral-300 rounded-sm bg-white text-black hover:cursor-pointer hover:text-white hover:shadow-md hover:bg-brown"
           />
         </div>
       </div>
@@ -112,17 +111,17 @@ export default function AccountsPage() {
           <TransfersTable onTransferChange={handleTransferChange} />
         )}
       </Suspense>
-      
+
       <Suspense fallback={null}>
         {selectedFilter === "contas" ? (
-          <RegisterAccountModal 
-            isOpen={isModalOpen} 
-            onClose={handleCloseModal} 
+          <RegisterAccountModal
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
           />
         ) : (
-          <RegisterTransferModal 
-            isOpen={isModalOpen} 
-            onClose={handleCloseModal} 
+          <RegisterTransferModal
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
           />
         )}
       </Suspense>
