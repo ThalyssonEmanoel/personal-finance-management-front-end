@@ -55,8 +55,8 @@ const ITEMS_PER_PAGE = 5;
 const ActionCell = memo(({ transaction, onView, onEdit, onDelete }) => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
-      <AccessibleButton 
-        variant="ghost" 
+      <AccessibleButton
+        variant="ghost"
         className="h-8 w-8 p-0"
         ariaLabel={`Ações para transação ${transaction.name}`}
         dataCy="transaction-actions-button"
@@ -64,7 +64,7 @@ const ActionCell = memo(({ transaction, onView, onEdit, onDelete }) => (
         <MoreHorizontal className="h-4 w-4" />
       </AccessibleButton>
     </DropdownMenuTrigger>
-    <DropdownMenuContent 
+    <DropdownMenuContent
       align="end"
       role="menu"
       aria-label="Menu de ações da transação"
@@ -100,15 +100,14 @@ const ActionCell = memo(({ transaction, onView, onEdit, onDelete }) => (
 ActionCell.displayName = 'ActionCell';
 
 const SortableHeader = memo(({ children, column, className = "" }) => (
-  <div 
+  <div
     className={`flex items-center cursor-pointer hover:text-gray-600 ${className}`}
     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
     role="button"
     tabIndex={0}
-    aria-label={`Ordenar por ${children} ${
-      column.getIsSorted() === "asc" ? "(crescente)" : 
-      column.getIsSorted() === "desc" ? "(decrescente)" : ""
-    }`}
+    aria-label={`Ordenar por ${children} ${column.getIsSorted() === "asc" ? "(crescente)" :
+        column.getIsSorted() === "desc" ? "(decrescente)" : ""
+      }`}
     onKeyDown={(e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -118,11 +117,11 @@ const SortableHeader = memo(({ children, column, className = "" }) => (
   >
     {children}
     <div className="ml-1 flex flex-col">
-      <ChevronUp 
+      <ChevronUp
         className={`h-3 w-3 ${column.getIsSorted() === "asc" ? "text-gray-900" : "text-gray-300"}`}
         aria-hidden="true"
       />
-      <ChevronDown 
+      <ChevronDown
         className={`h-3 w-3 ${column.getIsSorted() === "desc" ? "text-gray-900" : "text-gray-300"}`}
         aria-hidden="true"
       />
@@ -246,9 +245,8 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
         return (
           <div className="flex items-center relative -ml-4 -mt-3 -mb-3">
             <div
-              className={`w-3 h-20 rounded-l-md ${
-                type === "income" ? "bg-green-300" : "bg-red-300"
-              }`}
+              className={`w-3 h-20 rounded-l-md ${type === "income" ? "bg-green-300" : "bg-red-300"
+                }`}
               aria-hidden="true"
             />
             <span className="pl-4 capitalize">{tipoTexto}</span>
@@ -307,7 +305,7 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
       sortingFn: (rowA, rowB) => {
         const dateA = new Date(rowA.original.release_date);
         const dateB = new Date(rowB.original.release_date);
-        return dateB.getTime() - dateA.getTime(); 
+        return dateB.getTime() - dateA.getTime();
       },
     },
     {
@@ -336,12 +334,12 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
         const valueB = new Decimal(rowB.original.value_installment || rowB.original.value).toNumber();
         const typeA = rowA.original.type;
         const typeB = rowB.original.type;
-        
+
         // Converter despesas para valores negativos para ordenação correta
         const finalValueA = typeA === "expense" ? -valueA : valueA;
         const finalValueB = typeB === "expense" ? -valueB : valueB;
-        
-        return finalValueA - finalValueB; 
+
+        return finalValueA - finalValueB;
       },
     },
     {
@@ -408,48 +406,48 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
   ];
 
   return (
-    <div 
+    <div
       ref={elementRef}
       style={{ minHeight: dimensions.minHeight }}
       role="region"
       aria-label="Tabela de transações"
     >
-      <div className="flex items-end justify-between mb-6">
-        <div className="flex gap-6">
-          <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-6 gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full sm:w-auto">
+          <div className="w-full sm:w-auto">
             <AccessibleSelect
               value={localFilters.type}
               onValueChange={handleTypeFilterChange}
               label="Tipo de transação"
               ariaLabel="Filtrar por tipo de transação"
               items={typeOptions}
-              className="w-56 h-10 border-2 border-neutral-300 rounded-sm"
+              className="w-full sm:w-56 h-10 border-2 border-neutral-300 rounded-sm"
               dataCy="filter-transaction-type-select"
             />
           </div>
         </div>
-        <div className='mt-6'>
-          <ButtonC 
-            texto="Baixar extrato" 
-            largura="120px" 
-            altura="40px" 
-            type="button" 
+        <div className='mt-0 sm:mt-6 w-full sm:w-auto'>
+          <AccessibleButton
+            className="w-full sm:w-[160px] h-[40px] border-2 border-neutral-300 rounded-sm bg-white text-black hover:cursor-pointer hover:text-white hover:shadow-md hover:bg-brown"
+            ariaLabel="Abrir formulário para lançar nova transação"
             onClick={() => setIsReportModalOpen(true)}
             dataCy="download-report-button"
-          />
+          >
+            Baixar extrato
+          </AccessibleButton>
         </div>
       </div>
-      
-      <div className="border-2 border-neutral-300 rounded-md h-165">
-        <div className="px-8 py-8">
-          <div className="flex justify-between">
+
+      <div className="border-2 border-neutral-300 rounded-md min-h-[400px]">
+        <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-xl font-semibold mb-2">Receitas e despesas recentes</h2>
-              <p className="text-sm text-muted-foreground mb-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-2">Receitas e despesas recentes</h2>
+              <p className="text-sm text-muted-foreground">
                 Você possui um total de {pagination.total} registros.
               </p>
             </div>
-            <div className="relative w-56">
+            <div className="relative w-full sm:w-56">
               <label htmlFor="search-transactions" className="sr-only">
                 Buscar transações
               </label>
@@ -457,14 +455,14 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
                 id="search-transactions"
                 type="text"
                 placeholder="Ex.: Supermercado"
-                className="border-2 border-neutral-300 rounded-md w-56 h-10 pr-10"
+                className="border-2 border-neutral-300 rounded-md w-full sm:w-56 h-10 pr-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 aria-describedby="search-help"
                 data-cy="search-transactions-input"
               />
-              <Search 
-                className="absolute right-3 top-5 -translate-y-1/2 text-gray-300 w-5 h-5 pointer-events-none" 
+              <Search
+                className="absolute right-3 top-5 -translate-y-1/2 text-gray-300 w-5 h-5 pointer-events-none"
                 aria-hidden="true"
               />
               <div id="search-help" className="sr-only">
@@ -472,11 +470,12 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
               </div>
             </div>
           </div>
-          
-          <div className="overflow-hidden rounded-md">
-            <Table 
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-hidden rounded-md">
+            <Table
               className="fixed-table-layout transactions-table"
-              role="table" 
+              role="table"
               aria-label="Lista de transações"
               aria-rowcount={filteredTransactions.length + 1}
             >
@@ -485,8 +484,8 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
                   <TableRow key={headerGroup.id} role="row">
                     {headerGroup.headers.map((header) => (
                       <TableHead key={header.id} role="columnheader">
-                        {header.isPlaceholder 
-                          ? null 
+                        {header.isPlaceholder
+                          ? null
                           : flexRender(header.column.columnDef.header, header.getContext())
                         }
                       </TableHead>
@@ -497,8 +496,8 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell 
-                      colSpan={columns.length} 
+                    <TableCell
+                      colSpan={columns.length}
                       className="h-24 text-center"
                       role="status"
                       aria-live="polite"
@@ -508,8 +507,8 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
                   </TableRow>
                 ) : transactionsData.length > 0 ? (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow 
-                      key={row.id} 
+                    <TableRow
+                      key={row.id}
                       style={{ backgroundColor: "rgb(250, 249, 244)" }}
                       role="row"
                       data-cy="transaction-row"
@@ -523,8 +522,8 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell 
-                      colSpan={columns.length} 
+                    <TableCell
+                      colSpan={columns.length}
                       className="h-24 text-center"
                       role="status"
                       aria-live="polite"
@@ -536,11 +535,89 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
               </TableBody>
             </Table>
           </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-4">
+            {isLoading ? (
+              <div className="text-center py-8">
+                Carregando transações...
+              </div>
+            ) : filteredTransactions.length > 0 ? (
+              filteredTransactions.map((transaction) => {
+                const date = new Date(transaction.release_date);
+                date.setDate(date.getDate() + 1);
+                const formatted = date.toLocaleDateString("pt-BR");
+                const value = new Decimal(transaction.value_installment || transaction.value).toNumber();
+                const isNegative = transaction.type === "expense";
+                const formattedValue = new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(Math.abs(value));
+
+                return (
+                  <div
+                    key={transaction.id}
+                    className="bg-[#FAF9F4] rounded-lg border-2 border-neutral-300 p-4 relative"
+                    data-cy="transaction-card"
+                  >
+                    {/* Barra lateral colorida */}
+                    <div
+                      className={`absolute left-0 top-0 bottom-0 w-2 rounded-l-lg ${transaction.type === "income" ? "bg-green-300" : "bg-red-300"
+                        }`}
+                      aria-hidden="true"
+                    />
+
+                    {/* Header do card com nome e ações */}
+                    <div className="flex justify-between items-start mb-3 pl-2">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-base">{transaction.name}</h3>
+                        <p className="text-sm text-gray-600 capitalize">
+                          {transaction.type === "income" ? "Receita" : "Despesa"}
+                        </p>
+                      </div>
+                      <ActionCell
+                        transaction={transaction}
+                        onView={handleViewClick}
+                        onEdit={handleEditClick}
+                        onDelete={handleDeleteClick}
+                      />
+                    </div>
+
+                    {/* Informações do card */}
+                    <div className="pl-2 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Categoria:</span>
+                        <span className="font-medium">{transaction.category}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Conta:</span>
+                        <span className="font-medium">{transaction.account?.name || "N/A"}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Data:</span>
+                        <span className="font-medium">{formatted}</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                        <span className="text-gray-600 text-sm">Valor:</span>
+                        <span className={`font-bold text-lg ${isNegative ? "text-red-600" : "text-green-600"}`}>
+                          {isNegative ? `- ${formattedValue}` : `+ ${formattedValue}`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8">
+                Nenhum resultado encontrado.
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      
+
       {totalPages > 1 && (
-        <nav 
+        <nav
           className="mt-6 flex justify-center"
           aria-label="Navegação de páginas"
         >
@@ -554,7 +631,7 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
                   aria-label="Página anterior"
                 />
               </PaginationItem>
-              
+
               {visiblePages.map((page) => (
                 <PaginationItem key={page}>
                   <PaginationLink
@@ -568,7 +645,7 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
                   </PaginationLink>
                 </PaginationItem>
               ))}
-              
+
               {totalPages > 3 && currentPage < totalPages - 1 && (
                 <PaginationItem>
                   <PaginationEllipsis aria-label="Mais páginas" />
@@ -599,8 +676,8 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
         transaction={transactionToView}
       />
 
-      <Dialog 
-        open={isDeleteModalOpen} 
+      <Dialog
+        open={isDeleteModalOpen}
         onOpenChange={setIsDeleteModalOpen}
         aria-labelledby="delete-dialog-title"
         aria-describedby="delete-dialog-description"
@@ -617,12 +694,12 @@ const TransactionsTable = memo(({ filters: externalFilters = {}, onTransactionCh
               <X className="h-4 w-4" />
             </AccessibleButton>
           </div>
-          
+
           <div className="flex flex-col items-center text-center">
             <div className="mt-4 mb-6">
               <Trash2 className="h-16 w-16 text-neutral-300 mx-auto" aria-hidden="true" />
             </div>
-            
+
             <DialogHeader className="mb-6">
               <DialogTitle id="delete-dialog-title" className="text-lg font-semibold">
                 Excluir Transação

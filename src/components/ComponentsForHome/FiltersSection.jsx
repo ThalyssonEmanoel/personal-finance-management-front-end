@@ -21,7 +21,7 @@ const FiltersSection = memo(({ onFiltersChange }) => {
   const { data: accountsData, isLoading: accountsLoading, isError, error } = useAccountsQuery();
   const lastFiltersRef = useRef({});
   const { dimensions, elementRef } = useStableDimensions({
-    minHeight: '120px' 
+    minHeight: '120px'
   });
 
   const accountItems = useMemo(() => {
@@ -40,7 +40,7 @@ const FiltersSection = memo(({ onFiltersChange }) => {
       accountId: selectedAccount !== "All" ? selectedAccount : undefined,
       release_date: date ? date.toISOString().split('T')[0] : undefined
     };
-    
+
     const timeoutId = setTimeout(() => {
       if (JSON.stringify(filters) !== JSON.stringify(lastFiltersRef.current)) {
         lastFiltersRef.current = filters;
@@ -67,12 +67,12 @@ const FiltersSection = memo(({ onFiltersChange }) => {
   };
 
   return (
-    <div 
+    <div
       ref={elementRef}
-      className="px-20 mt-10 flex flex-row justify-between"
+      className="px-4 sm:px-6 lg:px-20 mt-6 sm:mt-8 lg:mt-10 mb-6 flex flex-col lg:flex-row justify-between gap-4 lg:gap-0"
       style={{ minHeight: dimensions.minHeight }}
     >
-      <div className="flex flex-wrap gap-6">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 sm:gap-6">
         <AccessibleSelect
           value={selectedAccount}
           onValueChange={setSelectedAccount}
@@ -84,11 +84,12 @@ const FiltersSection = memo(({ onFiltersChange }) => {
           groupLabel="Contas"
           id="account-select"
           dataCy="filter-account-select"
+          className="w-full sm:w-56 h-10 border-2 border-neutral-300 rounded-sm justify-between"
         />
-        
-        <div className="flex flex-col">
-          <Label 
-            htmlFor="date-picker" 
+
+        <div className="flex flex-col w-full sm:w-auto">
+          <Label
+            htmlFor="date-picker"
             className="mb-2 text-base font-medium text-gray-700"
           >
             Data das transações
@@ -98,17 +99,16 @@ const FiltersSection = memo(({ onFiltersChange }) => {
               <AccessibleButton
                 variant="outline"
                 id="date-picker"
-                className="w-56 h-10 border-2 border-neutral-300 rounded-sm justify-between"
+                className="w-full sm:w-56 h-10 border-2 border-neutral-300 rounded-sm justify-between"
                 ariaLabel={date ? `Data selecionada: ${date.toLocaleDateString()}` : "Selecionar data das transações"}
                 ariaDescribedBy="date-help"
                 dataCy="filter-date-picker"
               >
                 {date ? date.toLocaleDateString() : "Selecionar data"}
-                <ChevronDownIcon aria-hidden="true" />
               </AccessibleButton>
             </PopoverTrigger>
-            <PopoverContent 
-              className="w-auto overflow-hidden p-0" 
+            <PopoverContent
+              className="w-auto overflow-hidden p-0"
               align="start"
               role="dialog"
               aria-label="Seletor de data"
@@ -127,10 +127,10 @@ const FiltersSection = memo(({ onFiltersChange }) => {
           </div>
         </div>
       </div>
-      
-      <div className="mt-6">
+
+      <div className="mt-0 sm:mt-6 lg:mt-6 w-full sm:w-auto">
         <AccessibleButton
-          className="w-[160px] h-[40px] border-2 border-neutral-300 rounded-sm bg-white hover:bg-gray-50 text-black hover:cursor-pointer hover:text-white hover:shadow-md hover:bg-brown"
+          className="w-full sm:w-[160px] h-[40px] border-2 border-neutral-300 rounded-sm bg-white text-black hover:cursor-pointer hover:text-white hover:shadow-md hover:bg-brown"
           ariaLabel="Abrir formulário para lançar nova transação"
           onClick={handleModalOpen}
           dataCy="launch-transaction-button"

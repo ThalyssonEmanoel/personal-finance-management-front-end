@@ -172,9 +172,9 @@ const ChartCard = memo(({
       className="flex flex-col border-2 border-neutral-300"
       style={{ minHeight: dimensions.minHeight }}
     >
-      <div className="flex justify-between items-start pr-6">
-        <CardHeader className="items-center pb-0 flex-grow">
-          <CardTitle>{title}</CardTitle>
+      <div className="flex flex-col lg:flex-row justify-between items-start gap-4 pr-4 lg:pr-6">
+        <CardHeader className="items-center lg:items-start pb-0 flex-grow w-full lg:w-auto">
+          <CardTitle className="text-center lg:text-left">{title}</CardTitle>
           <CardDescription>
             {filters.release_date ? (() => {
               const [year, month, day] = filters.release_date.split('-').map(Number);
@@ -188,23 +188,23 @@ const ChartCard = memo(({
             })() : 'Todas as transações existentes'}
           </CardDescription>
         </CardHeader>
-        <div className="flex flex-col min-w-[200px]">
+        <div className="flex flex-col w-full lg:min-w-[200px] lg:w-auto px-4 lg:px-0">
           <AccessibleSelect
             value={sortBy}
             onValueChange={onSortChange}
             label="Organizar gráficos por:"
             ariaLabel={`Organizar gráfico de ${title.toLowerCase()} por`}
             items={sortOptions}
-            className="w-56 h-8 border-2 border-neutral-300 rounded-sm text-xs"
+            className="w-full lg:w-56 h-8 border-2 border-neutral-300 rounded-sm text-xs"
           />
         </div>
       </div>
       <CardContent className="flex-1 pb-0 flex items-center">
         {data.length > 0 ? (
-          <div className={`flex w-full ${showOthers ? 'ml-20' : ''}`}>
+          <div className={`flex flex-col lg:flex-row w-full ${showOthers ? 'lg:ml-20' : ''}`}>
             <ChartContainer
               config={chartConfig}
-              className="mx-auto aspect-square max-h-[250px] min-w-[250px]"
+              className="mx-auto aspect-square max-h-[200px] sm:max-h-[250px] min-w-[200px] sm:min-w-[250px]"
             >
               <PieChart>
                 <ChartTooltip
@@ -253,12 +253,12 @@ const ChartCard = memo(({
               </PieChart>
             </ChartContainer>
             {showOthers && (
-              <div className="w-1/2 pl-4 mt-4">
-                <h4 className="font-semibold mb-2">Demais categorias</h4>
+              <div className="w-full lg:w-1/2 px-4 lg:pl-4 mt-4">
+                <h4 className="font-semibold mb-2 text-sm sm:text-base">Demais categorias</h4>
                 <div className={otherCategories.length > 6 ? "max-h-32 overflow-y-auto" : ""}>
                   <ul>
                     {otherCategories.map(cat => (
-                      <li key={cat.name} className="text-sm mb-1">
+                      <li key={cat.name} className="text-xs sm:text-sm mb-1">
                         {cat.name} - {cat.transactionCount} Transações - {formatCurrency(cat.totalValue)}
                       </li>
                     ))}
@@ -361,7 +361,7 @@ const ChartsSection = memo(({ filters, onCategoryClick }) => {
 
   return (
     <div role="region" aria-label="Seção de gráficos e análises">
-      <div className="px-20 grid md:grid-cols-2 gap-6" style={{ minHeight: '400px' }}>
+      <div className="px-4 sm:px-6 lg:px-20 grid grid-cols-1 lg:grid-cols-2 gap-6" style={{ minHeight: '400px' }}>
         <ChartCard
           title="Despesas"
           data={chartData.expense.data}
@@ -393,7 +393,7 @@ const ChartsSection = memo(({ filters, onCategoryClick }) => {
         />
       </div>
       
-      <div className="px-20 mt-10 grid md:grid-cols-2 gap-6" style={{ minHeight: '300px' }}>
+      <div className="px-4 sm:px-6 lg:px-20 mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6" style={{ minHeight: '300px' }}>
         <Card className="flex flex-col border-2 border-neutral-300">
           <CardContent className="pt-6">
             <ColumnChart filters={filters} type="expense" />

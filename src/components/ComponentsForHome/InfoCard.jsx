@@ -17,7 +17,7 @@ const InfoCard = memo(({ title, value, isPositive, ariaLabel }) => {
   return (
     <div 
       ref={elementRef}
-      className="relative hover:shadow-md border-neutral-300 bg-[#FAF9F4] rounded-md shadow-sm pl-10 h-auto flex flex-col justify-center transition-shadow duration-200"
+      className="relative hover:shadow-md border-neutral-300 bg-[#FAF9F4] rounded-md shadow-sm px-6 sm:px-8 lg:pl-10 py-6 h-auto flex flex-col justify-center transition-shadow duration-200"
       style={{ minHeight: dimensions.minHeight }}
       role="article"
       aria-label={ariaLabel || `${title}: ${value}`}
@@ -25,14 +25,14 @@ const InfoCard = memo(({ title, value, isPositive, ariaLabel }) => {
       data-cy={dataCyMap[title] || 'info-card'}
     >
       <div 
-        className="text-lg font-semibold"
+        className="text-base sm:text-lg font-semibold"
         aria-level="3"
         role="heading"
       >
         {title}
       </div>
       <div 
-        className={`mt-2 text-2xl font-bold ${valueColor}`}
+        className={`mt-2 text-xl sm:text-2xl font-bold ${valueColor}`}
         aria-live="polite"
         aria-atomic="true"
       >

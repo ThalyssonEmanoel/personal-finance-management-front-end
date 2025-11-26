@@ -48,12 +48,8 @@ const HomePage = memo(() => {
   const { totalBalance, accounts, totalIncome, totalExpense } = calculatedValues;
 
   const getCurrentBalance = useMemo(() => {
-    if (filters.accountId && filters.accountId !== "All") {
-      const selectedAccount = accounts.find(acc => acc.id.toString() === filters.accountId.toString());
-      return selectedAccount?.balance || 0;
-    }
-    return totalBalance;
-  }, [filters.accountId, accounts, totalBalance]);
+    return totalIncome - totalExpense;
+  }, [totalIncome, totalExpense]);
 
   const handleFiltersChange = (newFilters) => {
     setFilters(prevFilters => ({
@@ -115,7 +111,7 @@ const HomePage = memo(() => {
       </section>
       
       <section 
-        className="px-20 -mt-1 grid md:grid-cols-3 gap-6"
+        className="px-4 sm:px-6 lg:px-20 -mt-1 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6"
         aria-label="Resumo financeiro"
         style={{ minHeight: '120px' }} // Altura fixa para evitar layout shift
       >
@@ -140,7 +136,7 @@ const HomePage = memo(() => {
       </section>
       
       <section 
-        className="px-20 mt-10 mb-10"
+        className="px-4 sm:px-6 lg:px-20 mt-10 mb-10"
         aria-label="Tabela de transações"
         style={{ minHeight: '300px' }}
       >
@@ -154,7 +150,7 @@ const HomePage = memo(() => {
       >
         <Suspense fallback={<LoadingFallback />}>
           <ChartsSection
-            className="px-20 mt-10 pb-10"
+            className="px-4 sm:px-6 lg:px-20 mt-10 pb-10"
             filters={filters}
             onCategoryClick={handleCategoryClick}
           />
