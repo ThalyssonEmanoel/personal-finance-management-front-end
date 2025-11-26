@@ -1,6 +1,6 @@
 import { memo } from 'react';
 
-const ButtonC = memo(({ texto, largura, altura, onClick, dataTest = null, type = 'button', disabled = false, ariaLabel, dataCy, ...rest }) => {
+const ButtonC = memo(({ texto, largura, altura, onClick, dataTest = null, type = 'button', disabled = false, ariaLabel, dataCy, className = '', ...rest }) => {
   // Extract data-cy from rest props if it exists, otherwise use dataCy
   const finalDataCy = rest['data-cy'] || dataCy;
   
@@ -19,7 +19,8 @@ const ButtonC = memo(({ texto, largura, altura, onClick, dataTest = null, type =
                   hover:text-white hover:shadow-md hover:bg-brown
                   duration-200
                   cursor-pointer
-                  ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+                  ${className}`}
       aria-label={ariaLabel || texto}
     >
       {texto}

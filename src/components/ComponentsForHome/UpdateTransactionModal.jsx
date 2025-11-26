@@ -229,13 +229,18 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="!fixed !right-0 !top-0 !left-auto !bottom-0 !h-screen !w-[500px] !max-w-none !rounded-none !border-l
-        !border-r-0 !overflow-y-auto !m-0 !p-6 !translate-x-0 !translate-y-0 !z-50 !bg-background !shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out
-        data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right"
+        className="
+          max-h-[100vh] overflow-y-auto w-[95vw] max-w-[500px]
+          md:!fixed md:!right-0 md:!top-0 md:!left-auto md:!bottom-0 md:!h-screen md:!w-[500px] md:!max-w-none md:!rounded-none md:!border-l
+          md:!border-r-0 md:!overflow-y-auto md:!m-0 md:!p-6 md:!translate-x-0 md:!translate-y-0 md:!z-50 md:!bg-background md:!shadow-lg 
+          md:data-[state=open]:animate-in md:data-[state=closed]:animate-out
+          md:data-[state=closed]:fade-out-0 md:data-[state=open]:fade-in-0 
+          md:data-[state=closed]:slide-out-to-right md:data-[state=open]:slide-in-from-right
+        "
         showCloseButton={true}
         data-cy="update-transaction-modal"
       >
-        <div className="space-y-10">
+        <div className="space-y-6 md:space-y-10 pb-4">
           <DialogHeader >
             <DialogTitle className="text-xl font-semibold">Atualizar Transação</DialogTitle>
           </DialogHeader>
@@ -612,22 +617,24 @@ const UpdateTransactionModal = ({ isOpen, onClose, transaction }) => {
                 />
               )}
 
-              <div className="flex pt-4 flex-row justify-between">
+              <div className="flex pt-4 flex-col sm:flex-row gap-3 sm:gap-0 sm:justify-between">
                 <ButtonC
                   texto={"Cancelar"}
-                  largura="200px"
+                  largura="100%"
                   altura="40px"
                   onClick={onClose}
                   disabled={isPending}
                   dataCy="update-transaction-cancel-button"
+                  className="sm:!w-[200px]"
                 />
                 <ButtonC
                   texto={isPending ? "Atualizando..." : "Atualizar"}
-                  largura="200px"
+                  largura="100%"
                   altura="40px"
                   type="submit"
                   disabled={isPending}
                   dataCy="update-transaction-submit-button"
+                  className="sm:!w-[200px]"
                 />
               </div>
             </form>

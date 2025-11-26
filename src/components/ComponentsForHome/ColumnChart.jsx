@@ -158,23 +158,23 @@ export function ColumnChart({ filters, type = "expense" }) {
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex flex-col">
-          <h3 className="text-lg font-semibold">{title}</h3>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+        <div className="flex flex-col w-full sm:w-auto">
+          <h3 className="text-base sm:text-lg font-semibold">{title}</h3>
           {selectedMonth && selectedYear && (
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
               {getDateRangeText()}
             </p>
           )}
         </div>
         
-        <div className="flex gap-4 items-end">
-          <div className="flex flex-col">
-            <label className="mb-2 text-sm font-medium text-gray-700" htmlFor="month-select">Selecione o mês:</label>
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
+          <div className="flex flex-col flex-1 sm:flex-initial">
+            <label className="mb-2 text-xs sm:text-sm font-medium text-gray-700" htmlFor="month-select">Selecione o mês:</label>
             <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
               <SelectTrigger 
                 id="month-select"
-                className="w-32 h-8 border-2 border-neutral-300 rounded-sm text-xs"
+                className="w-full sm:w-32 h-8 border-2 border-neutral-300 rounded-sm text-xs"
                 aria-label="Selecionar mês para filtrar gráfico"
               >
                 <SelectValue placeholder="Mês" />
@@ -189,12 +189,12 @@ export function ColumnChart({ filters, type = "expense" }) {
             </Select>
           </div>
           
-          <div className="flex flex-col">
-            <label className="mb-2 text-sm font-medium text-gray-700" htmlFor="year-select">Selecione o ano:</label>
+          <div className="flex flex-col flex-1 sm:flex-initial">
+            <label className="mb-2 text-xs sm:text-sm font-medium text-gray-700" htmlFor="year-select">Selecione o ano:</label>
             <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
               <SelectTrigger 
                 id="year-select"
-                className="w-24 h-8 border-2 border-neutral-300 rounded-sm text-xs"
+                className="w-full sm:w-24 h-8 border-2 border-neutral-300 rounded-sm text-xs"
                 aria-label="Selecionar ano para filtrar gráfico"
               >
                 <SelectValue placeholder="Ano" />
@@ -211,22 +211,31 @@ export function ColumnChart({ filters, type = "expense" }) {
         </div>
       </div>
       
-      <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+      <ChartContainer config={chartConfig} className="min-h-[250px] sm:min-h-[300px] w-full">
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <BarChart 
+            data={chartData} 
+            margin={{ 
+              top: 20, 
+              right: 10, 
+              left: 0, 
+              bottom: 5 
+            }}
+          >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="month"
               tickLine={false}
               tickMargin={10}
               axisLine={false}
+              tick={{ fontSize: 12 }}
             />
             <ChartTooltip 
               content={<ChartTooltipContent 
                 formatter={(value, name) => [formatCurrency(value), " ", name]}
               />} 
             />
-            <ChartLegend content={<ChartLegendContent />} />
+            <ChartLegend content={<ChartLegendContent className="flex-wrap" />} />
             <Bar dataKey="metas" fill="var(--color-metas)" radius={4} />
             <Bar dataKey="transacoes" fill="var(--color-transacoes)" radius={4} />
           </BarChart>
