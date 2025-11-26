@@ -1,7 +1,8 @@
 'use client'
-import { useState, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import Header from "@/components/nav-menu";
 import OptimizedImage from "@/components/OptimizedImage";
+import { ChevronUp } from "lucide-react";
 
 // Lazy loading dos modais para reduzir JavaScript inicial
 const ModalLogin = lazy(() => import("@/components/Auth/ModalLogin").then(module => ({ default: module.ModalLogin })));
@@ -13,6 +14,23 @@ export default function IntroductionPage() {
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   const handleLoginClick = () => {
     setIsModalOpen(true);
@@ -277,6 +295,17 @@ export default function IntroductionPage() {
           />
         )}
       </Suspense>
+
+      {/* Botão de Voltar ao Topo */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 bg-brown cursor-pointer text-white p-3 rounded-full shadow-lg hover:opacity-90 transition-all duration-300 z-50 animate-in fade-in slide-in-from-bottom-4"
+          aria-label="Voltar ao topo"
+        >
+          <ChevronUp className="w-6 h-6" />
+        </button>
+      )}
     </>
   );
 }

@@ -12,12 +12,21 @@ describe('Forgot Password Test', () => {
   })
 
   it('deve enviar código de recuperação para email válido', () => {
+    // Interceptar a requisição para simular delay
+    cy.intercept('POST', '**/forgot-password', {
+      delay: 1000,
+      statusCode: 200,
+      body: { message: 'Código enviado com sucesso' }
+    }).as('forgotPassword')
+    
     cy.get('[data-cy=forgot-password-email-input]').type(Cypress.env('email'))
     cy.get('[data-cy=forgot-password-submit-button]').click()
     
-    // Verificar mensagem de sucesso ou redirecionamento
-    // Ajustar de acordo com o comportamento real da aplicação
+    // Verificar que o botão está desabilitado durante o envio
     cy.get('[data-cy=forgot-password-submit-button]').should('be.disabled')
+    
+    // Aguardar a requisição completar
+    cy.wait('@forgotPassword')
   })
 
   it('deve validar formato de email', () => {
@@ -53,10 +62,20 @@ describe('Forgot Password Test', () => {
   })
 
   it('deve desabilitar botão durante envio', () => {
+    // Interceptar a requisição para simular delay
+    cy.intercept('POST', '**/forgot-password', {
+      delay: 1000,
+      statusCode: 200,
+      body: { message: 'Código enviado com sucesso' }
+    }).as('forgotPassword')
+    
     cy.get('[data-cy=forgot-password-email-input]').type(Cypress.env('email'))
     cy.get('[data-cy=forgot-password-submit-button]').click()
     
-    // Verificar que o botão fica desabilitado durante o processamento
+    // Verificar que o botão está desabilitado durante o envio
     cy.get('[data-cy=forgot-password-submit-button]').should('be.disabled')
+    
+    // Aguardar a requisição completar
+    cy.wait('@forgotPassword')
   })
 })

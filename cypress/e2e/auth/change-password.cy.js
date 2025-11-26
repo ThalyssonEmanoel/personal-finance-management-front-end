@@ -7,12 +7,20 @@ describe('Change Password Test', () => {
     cy.get('[data-cy=login-tab]', { timeout: 10000 }).should('be.visible')
     cy.get('[data-cy=forgot-password-link]', { timeout: 10000 }).click()
     
+    // Interceptar a requisição de forgot-password para simular delay
+    cy.intercept('POST', '**/forgot-password', {
+      delay: 500,
+      statusCode: 200,
+      body: { message: 'Código enviado com sucesso' }
+    }).as('forgotPasswordSetup')
+    
     // Simular envio de código para poder testar o modal de mudança de senha
     cy.get('[data-cy=forgot-password-email-input]', { timeout: 10000 }).type(Cypress.env('email'))
     cy.get('[data-cy=forgot-password-submit-button]').click()
     
-    // Aguardar transição para o modal de mudança de senha
-    cy.wait(2500)
+    // Aguardar a requisição completar e transição para o modal de mudança de senha
+    cy.wait('@forgotPasswordSetup')
+    cy.wait(500) // Tempo adicional para animação do modal
   })
 
   it('deve exibir o modal de alteração de senha', () => {
@@ -23,15 +31,23 @@ describe('Change Password Test', () => {
   })
 
   it('deve alterar senha com código válido', () => {
-    // Nota: Este teste requer um código real do backend
-    // Para testes automatizados, considere mockar o backend
+    // Interceptar a requisição para simular delay
+    cy.intercept('POST', '**/reset-password', {
+      delay: 1000,
+      statusCode: 400,
+      body: { message: 'Código inválido' }
+    }).as('resetPassword')
+    
     cy.get('[data-cy=change-password-code-input]').type('123456')
     cy.get('[data-cy=change-password-new-password-input]').type('NovaSenha@123')
     cy.get('[data-cy=change-password-confirm-password-input]').type('NovaSenha@123')
     cy.get('[data-cy=change-password-submit-button]').click()
     
-    // Verificar que o formulário foi submetido
+    // Verificar que o botão está desabilitado durante o envio
     cy.get('[data-cy=change-password-submit-button]').should('be.disabled')
+    
+    // Aguardar a requisição completar
+    cy.wait('@resetPassword')
   })
 
   it('deve validar que as senhas coincidem', () => {
@@ -91,11 +107,22 @@ describe('Change Password Test', () => {
   })
 
   it('deve desabilitar botão durante envio', () => {
+    // Interceptar a requisição para simular delay
+    cy.intercept('POST', '**/reset-password', {
+      delay: 1000,
+      statusCode: 400,
+      body: { message: 'Código inválido' }
+    }).as('resetPassword')
+    
     cy.get('[data-cy=change-password-code-input]').type('123456')
     cy.get('[data-cy=change-password-new-password-input]').type('NovaSenha@123')
     cy.get('[data-cy=change-password-confirm-password-input]').type('NovaSenha@123')
     cy.get('[data-cy=change-password-submit-button]').click()
     
+    // Verificar que o botão está desabilitado durante o envio
     cy.get('[data-cy=change-password-submit-button]').should('be.disabled')
+    
+    // Aguardar a requisição completar
+    cy.wait('@resetPassword')
   })
 })
