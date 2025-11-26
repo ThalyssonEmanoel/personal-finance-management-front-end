@@ -74,11 +74,11 @@ const FilterSection = memo(({ onFiltersChange }) => {
   return (
     <div 
       ref={elementRef}
-      className="px-20 mt-10 flex flex-row justify-between"
+      className="px-4 sm:px-6 lg:px-20 mt-10 mb-8 flex flex-col sm:flex-row sm:justify-between gap-4 sm:gap-6"
       style={{ minHeight: dimensions.minHeight }}
     >
-      <div className="flex flex-wrap gap-6">
-        <div className="flex flex-col">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 sm:gap-6">
+        <div className="flex flex-col w-full sm:w-auto">
           <Label 
             htmlFor="month-picker" 
             className="mb-2 text-base font-medium text-gray-700"
@@ -90,12 +90,11 @@ const FilterSection = memo(({ onFiltersChange }) => {
               <AccessibleButton
                 variant="outline"
                 id="month-picker"
-                className="w-56 h-10 border-2 border-neutral-300 rounded-sm justify-between"
+                className="w-full sm:w-56 h-10 border-2 border-neutral-300 rounded-sm justify-between"
                 ariaLabel={date ? `Mês selecionado: ${date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' })}` : "Selecionar mês das metas"}
                 ariaDescribedBy="month-help"
               >
                 {date ? date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' }) : "Selecionar mês"}
-                <ChevronDownIcon aria-hidden="true" />
               </AccessibleButton>
             </PopoverTrigger>
             <PopoverContent 
@@ -129,13 +128,14 @@ const FilterSection = memo(({ onFiltersChange }) => {
           loading={false}
           error={null}
           groupLabel="Tipos de meta"
+          className="w-full sm:w-56 h-10 border-2 border-neutral-300 rounded-sm justify-between"
           id="type-select"
         />
       </div>
       
-      <div className="mt-6">
+      <div className="w-full sm:w-auto sm:mt-6">
         <AccessibleButton
-          className="w-[160px] h-[40px] border-2 border-neutral-300 rounded-sm bg-white text-black hover:cursor-pointer hover:text-white hover:shadow-md hover:bg-brown"
+          className="w-full sm:w-[160px] h-[40px] border-2 border-neutral-300 rounded-sm bg-white text-black hover:cursor-pointer hover:text-white hover:shadow-md hover:bg-brown"
           ariaLabel="Abrir formulário para criar nova meta"
           onClick={handleCreateModalOpen}
         >

@@ -30,7 +30,7 @@ export default function GoalsPage() {
       <FilterSection onFiltersChange={handleFiltersChange} />
 
       <section
-        className="px-20 mb-10"
+        className="px-4 sm:px-6 lg:px-20 mb-10"
         aria-label="Tabela de metas"
         style={{ minHeight: '300px' }}
       >

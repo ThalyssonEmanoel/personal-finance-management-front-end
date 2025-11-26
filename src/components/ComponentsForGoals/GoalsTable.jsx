@@ -367,16 +367,16 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
       role="region"
       aria-label="Tabela de metas"
     >
-      <div className="border-2 border-neutral-300 rounded-md h-165">
-        <div className="px-8 py-8">
-          <div className="flex justify-between">
+      <div className="border-2 border-neutral-300 rounded-md h-165 overflow-y-auto">
+        <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-4 sm:gap-0 mb-4">
             <div>
               <h2 className="text-xl font-semibold mb-2">Metas recentes</h2>
-              <p className="text-sm text-muted-foreground mb-6">
+              <p className="text-sm text-muted-foreground mb-4 sm:mb-6">
                 Você possui um total de {pagination.total} metas.
               </p>
             </div>
-            <div className="relative w-56">
+            <div className="relative w-full sm:w-56">
               <label htmlFor="search-goals" className="sr-only">
                 Buscar metas
               </label>
@@ -384,7 +384,7 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
                 id="search-goals"
                 type="text"
                 placeholder="Ex.: Dezembro"
-                className="border-2 border-neutral-300 rounded-md w-56 h-10 pr-10"
+                className="border-2 border-neutral-300 rounded-md w-full h-10 pr-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 aria-describedby="search-help"
@@ -399,7 +399,8 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
             </div>
           </div>
 
-          <div className="overflow-hidden  rounded-md">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-hidden rounded-md">
             <Table
               className="fixed-table-layout goals-table"
               role="table"
@@ -465,6 +466,80 @@ const GoalsTable = memo(({ filters: externalFilters = {} }) => {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p>Carregando metas...</p>
+              </div>
+            ) : filteredGoals.length > 0 ? (
+              filteredGoals.map((goal) => {
+                const typeLabel = goal.transaction_type === 'income' ? 'Receita' : 'Despesa';
+                const colorClass = goal.transaction_type === 'income' ? "text-green-600" : "text-red-600";
+                const formattedValue = parseFloat(goal.value).toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL'
+                });
+                const formattedDate = new Date(goal.date).toLocaleDateString('pt-BR');
+
+                return (
+                  <div
+                    key={goal.id}
+                    className="bg-[rgb(250,249,244)] border border-neutral-200 rounded-lg p-4 relative"
+                    style={{ borderLeft: '4px solid #93C5FD' }}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-base mb-1">{goal.name}</h3>
+                        <p className={`text-sm font-bold ${colorClass}`}>
+                          Meta para: {typeLabel}
+                        </p>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Abrir menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleViewClick(goal)}>
+                            Visualizar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditClick(goal)}>
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteClick(goal)}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Data:</span>
+                        <span className="font-medium">{formattedDate}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Valor:</span>
+                        <span className="font-bold">{formattedValue}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8">
+                <p>Nenhum resultado encontrado.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

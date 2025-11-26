@@ -109,9 +109,12 @@ const UpdateGoalsModal = ({ isOpen, onClose, goal }) => {
       aria-labelledby="update-goal-dialog-title"
     >
       <DialogContent 
-        className="!fixed !right-0 !top-0 !left-auto !bottom-0 !h-screen !w-[500px] !max-w-none !rounded-none !border-l
-        !border-r-0 !overflow-y-auto !m-0 !p-6 !translate-x-0 !translate-y-0 !z-50 !bg-background !shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out
-        data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right"
+        className="max-h-[100vh] overflow-y-auto w-[95vw] max-w-[500px]
+          md:!fixed md:!right-0 md:!top-0 md:!left-auto md:!bottom-0 md:!h-screen md:!w-[500px] md:!max-w-none md:!rounded-none md:!border-l
+          md:!border-r-0 md:!overflow-y-auto md:!m-0 md:!p-6 md:!translate-x-0 md:!translate-y-0 md:!z-50 md:!bg-background md:!shadow-lg 
+          md:data-[state=open]:animate-in md:data-[state=closed]:animate-out
+          md:data-[state=closed]:fade-out-0 md:data-[state=open]:fade-in-0 
+          md:data-[state=closed]:slide-out-to-right md:data-[state=open]:slide-in-from-right"
         showCloseButton={true}
       >
         <div className="space-y-10">
@@ -156,7 +159,7 @@ const UpdateGoalsModal = ({ isOpen, onClose, goal }) => {
                     aria-describedby={form.formState.errors.transaction_type ? "type-error" : undefined}
                   >
                     <FormControl>
-                      <SelectTrigger className="border-2 border-neutral-300 rounded-md">
+                      <SelectTrigger className="w-full sm:w-[160px] h-[40px] border-2 border-neutral-300 rounded-sm bg-white text-black hover:cursor-pointer hover:text-white hover:shadow-md hover:bg-brown">
                         <SelectValue placeholder="Selecione o tipo da meta" />
                       </SelectTrigger>
                     </FormControl>
@@ -172,8 +175,6 @@ const UpdateGoalsModal = ({ isOpen, onClose, goal }) => {
                 </FormItem>
               )}
             />
-
-            {/* Data */}
             <FormField
               control={form.control}
               name="date"
@@ -220,8 +221,6 @@ const UpdateGoalsModal = ({ isOpen, onClose, goal }) => {
                 </FormItem>
               )}
             />
-
-            {/* Valor */}
             <FormField
               control={form.control}
               name="value"
@@ -244,8 +243,6 @@ const UpdateGoalsModal = ({ isOpen, onClose, goal }) => {
                 </FormItem>
               )}
             />
-
-            {/* Mensagem de Erro */}
             {isError && (
               <div 
                 className="text-red-600 text-sm text-center p-3 bg-red-50 rounded-md"
@@ -256,20 +253,18 @@ const UpdateGoalsModal = ({ isOpen, onClose, goal }) => {
               </div>
             )}
 
-            <div className="flex pt-4 flex-row justify-between">
+            <div className="flex pt-4 flex-col sm:flex-row gap-3 sm:justify-between">
               <ButtonC
                 texto={"Cancelar"}
-                largura="200px"
-                altura="40px"
                 onClick={onClose}
                 disabled={isPending}
+                className=""
               />
               <ButtonC
                 texto={isPending ? "Atualizando..." : "Atualizar"}
-                largura="200px"
-                altura="40px"
                 type="submit"
                 disabled={isPending}
+                className="w-full sm:w-[160px] h-[40px] border-2 border-neutral-300 rounded-sm bg-white text-black hover:cursor-pointer hover:text-white hover:shadow-md hover:bg-brown"
               />
             </div>
           </form>
