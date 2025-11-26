@@ -1,10 +1,15 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 
-import { loginUser, refreshUserToken } from "./utils/apiService.js";
+import { loginUser, refreshUserToken, loginWithOAuth } from "./utils/apiService.js";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
     Credentials({
       credentials: {
         email: {},
@@ -29,9 +34,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, account, trigger, session }) {
       if (user) {
         token.user = user;
+      }
+
+      // Se login foi via Google OAuth
+      if (account?.provider === "google" && user) {
+        try {
+          const response = await loginWithOAuth(user.email, user.name, user.image);
+          if (response?.data && response.data.usuario) {
+            const { accessToken, refreshToken, usuario } = response.data;
+            token.user = {
+              id: usuario.id.toString(),
+              name: usuario.name,
+              email: usuario.email,
+              avatar: usuario.avatar,
+              accessToken,
+              refreshToken,
+            };
+          }
+        } catch (error) {
+          console.error('Erro ao autenticar com OAuth:', error);
+          return null;
+        }
       }
 
       if (trigger === "update" && session?.user) {

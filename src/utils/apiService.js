@@ -95,3 +95,7 @@ export const changeUserPassword = async (userId, passwordData) => {
     body: passwordData,
   });
 };
+
+export const loginWithOAuth = async (email, name, avatar) => {
+  return apiService.post('/oauth/login', { email, name, avatar });
+};
