@@ -1,0 +1,101 @@
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
+export const apiService = {
+  async request(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    if (options.body && typeof options.body === 'object') {
+      config.body = JSON.stringify(options.body);
+    }
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Erro na requisição:', JSON.stringify(data));
+      const errorMsg =
+        Array.isArray(data.message) && data.message.length > 0
+          ? data.message[0].message
+          : data.message;
+      throw new Error(errorMsg);
+    }
+    return data;
+  },
+
+  async get(endpoint, options = {}) {
+    return this.request(endpoint, { method: 'GET', ...options });
+  },
+
+  async post(endpoint, body, options = {}) {
+    return this.request(endpoint, { method: 'POST', body, ...options });
+  },
+
+  async put(endpoint, body, options = {}) {
+    return this.request(endpoint, { method: 'PUT', body, ...options });
+  },
+
+  async delete(endpoint, options = {}) {
+    return this.request(endpoint, { method: 'DELETE', ...options });
+  },
+};
+
+
+export const loginUser = async (email, password) => {
+  return apiService.post('/login', { email, password });
+};
+
+export const forgotUserPassword = async (email) => {
+  return apiService.post('/forgot-password', { email });
+};
+
+export const resetPassword = async (email, code, password) => {
+  return apiService.post('/reset-password', { email, code, password });
+};
+
+export const refreshUserToken = async (refreshToken) => {
+  return apiService.post('/refresh-token', { refreshToken });
+};
+
+export const logoutUser = async (id) => {
+  return apiService.post('/logout', { id });
+};
+
+export const createUser = async (formData) => {
+  const url = `${API_BASE_URL}/users`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Erro na criação do usuário');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro na criação do usuário:', error);
+    throw error;
+  }
+};
+
+export const changeUserPassword = async (userId, passwordData) => {
+  return apiService.request(`/users/${userId}/change-password`, {
+    method: 'PATCH',
+    body: passwordData,
+  });
+};
+
+export const loginWithOAuth = async (email, name, avatar) => {
+  return apiService.post('/oauth/login', { email, name, avatar });
+};

@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: personal-finance
+spec:
+  selector:
+    matchLabels:
+      app: personal-finance
+  template:
+    metadata:
+      labels:
+        app: personal-finance
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - name: personal-finance
+        image: thalyssoemanoel/personal-finance:latest
+        resources: {}
+        ports:
+        - containerPort: 3000
+        env:
+          - name: AUTH_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: personal-finance-front-secrets
+                key: AUTH_SECRET
+          - name: NEXT_PUBLIC_API_URL
+            valueFrom:
+              secretKeyRef:
+                name: personal-finance-front-secrets
+                key: NEXT_PUBLIC_API_URL
+          - name: GOOGLE_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: personal-finance-front-secrets
+                key: GOOGLE_CLIENT_ID
+          - name: GOOGLE_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: personal-finance-front-secrets
+                key: GOOGLE_CLIENT_SECRET      
+          - name: NEXTAUTH_URL
+            value: "https://personal-finance.app.fslab.dev"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: personal-finance
+spec:
+  type: ClusterIP
+  selector:
+    app: personal-finance
+  ports:
+  - port: 80
+    targetPort: 3000
